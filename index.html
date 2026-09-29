@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>サーフィン行こ</title>
+<meta name="theme-color" content="#0E5A8A">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="サーフィン行こ">
+
+<!-- ================================================================
+     ▼▼▼ Supabase の接続情報(README ステップ3参照)▼▼▼
+================================================================ -->
+<script>
+window.SUPABASE_URL      = "https://fxdqfbryqzfuuhabkpto.supabase.co";
+window.SUPABASE_ANON_KEY = "sb_publishable_W1abE7HNjQaarTDyIOsXbQ_YNIPWrX7";
+</script>
+<!-- ▲▲▲ ここまで ▲▲▲ -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+/* ================= 基本 ================= */
+:root{
+  --accent:#0E5A8A; --accent-weak:#E3EEF5;
+  --bg:#F5F8FA; --card:#FFFFFF; --text:#22333B; --sub:#7A8B94;
+  --line:#E3E9ED; --danger:#D64545; --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  font-size:16px; overscroll-behavior-y:none;}
+body{padding-bottom:calc(64px + var(--safe-bottom));}
+button{font-family:inherit; font-size:1rem; border:none; cursor:pointer; background:none; color:inherit;}
+input,select,textarea{font-family:inherit; font-size:1rem;}
+.hidden{display:none !important;}
+
+/* ================= 共通部品 ================= */
+.screen{max-width:520px; margin:0 auto; padding:12px 14px 24px;}
+.card{background:var(--card); border-radius:16px; padding:16px; margin-bottom:14px;
+  box-shadow:0 1px 3px rgba(30,60,80,.06);}
+h1{font-size:1.25rem; margin:10px 0 14px;}
+h2{font-size:1.05rem; margin:0 0 10px;}
+.btn{display:block; width:100%; min-height:48px; border-radius:12px; font-weight:600;
+  background:var(--accent); color:#fff; padding:12px;}
+.btn:active{opacity:.85;}
+.btn.secondary{background:var(--accent-weak); color:var(--accent);}
+.btn.danger-outline{background:#fff; color:var(--danger); border:1.5px solid var(--danger);}
+.btn:disabled{opacity:.45;}
+.field{width:100%; min-height:48px; border:1.5px solid var(--line); border-radius:12px;
+  padding:10px 12px; background:#fff;}
+.field:focus{outline:2px solid var(--accent); border-color:transparent;}
+.sub{color:var(--sub); font-size:.85rem;}
+.row{display:flex; align-items:center; gap:10px;}
+.spacer{flex:1;}
+
+/* トースト */
+#toast{position:fixed; top:12px; left:50%; transform:translateX(-50%) translateY(-80px);
+  background:#2E3D46; color:#fff; padding:10px 20px; border-radius:24px; font-size:.9rem;
+  transition:transform .25s; z-index:200; max-width:90%; text-align:center;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+#toast.error{background:var(--danger);}
+
+/* スピナー */
+#spinner{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(245,248,250,.6); z-index:150;}
+.spin{width:38px; height:38px; border:4px solid var(--accent-weak);
+  border-top-color:var(--accent); border-radius:50%; animation:sp 1s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+
+/* ================= ログイン ================= */
+#login-screen{padding-top:36px;}
+.login-logo{text-align:center; margin-bottom:22px;}
+.login-logo img{width:84px; height:84px; border-radius:20px;}
+.login-logo div{font-size:1.35rem; font-weight:700; margin-top:10px;}
+.name-item{display:flex; align-items:center; width:100%; min-height:56px; padding:8px 14px;
+  border-bottom:1px solid var(--line); font-size:1.05rem; text-align:left;}
+.name-item:last-child{border-bottom:none;}
+.name-item:active{background:var(--accent-weak);}
+.name-item .arrow{margin-left:auto; color:var(--sub);}
+#pin-boxes{display:flex; gap:12px; justify-content:center; margin:18px 0;}
+.pin-box{width:52px; height:60px; border:2px solid var(--line); border-radius:12px;
+  display:flex; align-items:center; justify-content:center; font-size:1.7rem; font-weight:700; background:#fff;}
+.pin-box.filled{border-color:var(--accent);}
+#pin-pad{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:300px; margin:0 auto;}
+#pin-pad button{min-height:58px; background:#fff; border-radius:14px; font-size:1.4rem; font-weight:600;
+  box-shadow:0 1px 2px rgba(30,60,80,.08);}
+#pin-pad button:active{background:var(--accent-weak);}
+.pin-error{color:var(--danger); text-align:center; min-height:1.4em; margin:8px 0; font-size:.9rem;}
+
+/* ================= タブバー ================= */
+#tabbar{position:fixed; bottom:0; left:0; right:0; display:flex; background:#fff;
+  border-top:1px solid var(--line); padding-bottom:var(--safe-bottom); z-index:100;}
+#tabbar button{flex:1; padding:8px 0 6px; text-align:center; color:var(--sub); font-size:.72rem; position:relative;}
+#tabbar button.active{color:var(--accent); font-weight:700;}
+#tabbar .ticon{font-size:1.5rem; display:block; line-height:1.2;}
+.reddot{position:absolute; top:4px; left:calc(50% + 12px); width:10px; height:10px;
+  background:var(--danger); border-radius:50%;}
+.reddot-inline{display:inline-block; width:9px; height:9px; background:var(--danger);
+  border-radius:50%; margin-left:6px; vertical-align:middle;}
+
+/* ================= ジャンルタブ ================= */
+#genre-tabs{display:flex; gap:8px; margin-bottom:10px;}
+#genre-tabs button{flex:1; min-height:44px; border-radius:12px; background:#fff; font-weight:600;
+  border:1.5px solid var(--line); color:var(--sub);}
+#genre-tabs button.active{background:var(--accent); border-color:var(--accent); color:#fff;}
+
+/* ================= 絵の具パレット ================= */
+#palette{display:flex; gap:8px; overflow-x:auto; padding:4px 2px 10px; -webkit-overflow-scrolling:touch;}
+.chip{flex-shrink:0; min-height:44px; border-radius:22px; padding:8px 14px; font-size:.88rem;
+  font-weight:600; color:#fff; opacity:.55; border:2.5px solid transparent; white-space:nowrap;}
+.chip.selected{opacity:1; border-color:#22333B; box-shadow:0 2px 6px rgba(0,0,0,.2);}
+.chip.eraser{background:#fff; color:var(--text); border:2.5px dashed var(--sub); opacity:1;}
+.chip.eraser.selected{border:2.5px solid var(--danger); color:var(--danger);}
+#paint-hint{font-size:.8rem; color:var(--sub); margin:0 2px 8px; min-height:1.2em;}
+
+/* ================= カレンダー ================= */
+#cal-head{display:flex; align-items:center; margin-bottom:6px;}
+#cal-head .nav{min-width:48px; min-height:44px; font-size:1.3rem; color:var(--accent);}
+#cal-title{flex:1; text-align:center; font-weight:700; font-size:1.1rem;}
+#btn-today{font-size:.8rem; color:var(--accent); border:1px solid var(--accent);
+  border-radius:14px; padding:5px 10px; margin-left:4px;}
+#cal-grid{touch-action:none; user-select:none; -webkit-user-select:none; background:#fff;
+  border-radius:14px; padding:8px 6px 10px; box-shadow:0 1px 3px rgba(30,60,80,.06);}
+.cal-week{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:4px;}
+.dow{text-align:center; font-size:.72rem; color:var(--sub); padding:4px 0;}
+.dow.sun{color:#D06565;} .dow.sat{color:#5581C9;}
+.day{position:relative; aspect-ratio:1/1.15; border-radius:10px; background:var(--bg);
+  display:flex; flex-direction:column; align-items:center; padding-top:5px;}
+.day .num{font-size:.9rem; font-weight:600; line-height:1.2; z-index:1;}
+.day.other-month{visibility:hidden;}
+.day.past{opacity:.38;}
+.day.today .num{background:var(--accent); color:#fff; border-radius:50%;
+  width:24px; height:24px; display:flex; align-items:center; justify-content:center;}
+.day.painted .num{color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.25);}
+.day .note-mark{position:absolute; top:3px; right:4px; font-size:.6rem; z-index:1;}
+.day .bars{position:absolute; bottom:3px; left:4px; right:4px; display:flex; gap:2px; height:12px;}
+.day .bars .bar{flex:1; border-radius:3px; color:#fff; font-size:.55rem; font-weight:700;
+  display:flex; align-items:center; justify-content:center; overflow:hidden; line-height:1;}
+#legend{margin-top:10px; display:flex; flex-wrap:wrap; gap:8px 14px; font-size:.75rem; color:var(--sub);}
+#legend .lg{display:flex; align-items:center; gap:4px;}
+#legend .sw{width:14px; height:14px; border-radius:4px;}
+
+/* まとめてメモのバー */
+#bulk-memo-bar{position:fixed; bottom:calc(72px + var(--safe-bottom)); left:50%;
+  transform:translateX(-50%); background:#2E3D46; color:#fff; border-radius:26px;
+  padding:10px 18px; display:flex; gap:14px; align-items:center; z-index:120; font-size:.9rem;
+  box-shadow:0 4px 12px rgba(0,0,0,.25);}
+#bulk-memo-bar button{color:#8FD3F4; font-weight:700;}
+
+/* ================= ボトムシート ================= */
+#sheet-back{position:fixed; inset:0; background:rgba(20,40,50,.4); z-index:130;}
+#sheet{position:fixed; left:0; right:0; bottom:0; background:#fff; border-radius:20px 20px 0 0;
+  padding:18px 18px calc(20px + var(--safe-bottom)); z-index:131; max-height:75vh; overflow-y:auto;
+  max-width:560px; margin:0 auto;}
+#sheet .grip{width:44px; height:5px; background:var(--line); border-radius:3px; margin:0 auto 14px;}
+.sheet-person{display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);}
+.sheet-person:last-child{border-bottom:none;}
+.avatar{width:38px; height:38px; border-radius:50%; color:#fff; font-weight:700;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+
+/* ================= 仲間・じぶん ================= */
+.member-row{display:flex; align-items:center; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line);}
+.member-row:last-child{border-bottom:none;}
+.member-name-btn{display:flex; align-items:center; gap:10px; flex:1; text-align:left; min-height:44px;}
+.check{width:26px; height:26px; accent-color:var(--accent); flex-shrink:0;}
+.mylist-day{display:flex; align-items:center; gap:8px; padding:8px 2px; border-bottom:1px solid var(--line); font-size:.92rem;}
+.mylist-day:last-child{border-bottom:none;}
+.intent-tag{color:#fff; font-size:.72rem; font-weight:700; border-radius:6px; padding:3px 8px; white-space:nowrap;}
+.del-btn{color:var(--danger); font-size:1.1rem; min-width:44px; min-height:44px;}
+
+/* モーダル(確認・PIN変更) */
+#modal-back{position:fixed; inset:0; background:rgba(20,40,50,.45); z-index:140;
+  display:flex; align-items:center; justify-content:center; padding:20px;}
+#modal{background:#fff; border-radius:18px; padding:20px; width:100%; max-width:380px;
+  max-height:80vh; overflow-y:auto;}
+#modal h2{margin-bottom:12px;}
+#modal .btn{margin-top:10px;}
+</style>
+</head>
+<body>
+
+<div id="spinner"><div class="spin"></div></div>
+<div id="toast"></div>
+
+<!-- ============ ログイン画面 ============ -->
+<div id="login-screen" class="screen hidden">
+  <div class="login-logo">
+    <img src="icons/icon-192.png" alt="">
+    <div>サーフィン行こ</div>
+  </div>
+  <div id="login-step-name">
+    <div class="card">
+      <h2>じぶんの名前を選んでね</h2>
+      <div id="login-names"></div>
+    </div>
+    <p class="sub" style="text-align:center">名前がないときは Yama に連絡してください</p>
+  </div>
+  <div id="login-step-pin" class="hidden">
+    <div class="card">
+      <h2 id="pin-title">PINを入れてね</h2>
+      <div id="pin-boxes">
+        <div class="pin-box"></div><div class="pin-box"></div>
+        <div class="pin-box"></div><div class="pin-box"></div>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+      <div id="pin-pad"></div>
+      <button class="btn secondary" style="margin-top:16px" onclick="backToNames()">← 名前を選び直す</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ アプリ本体 ============ -->
+<div id="app" class="hidden">
+
+  <!-- カレンダー -->
+  <div id="view-cal" class="screen">
+    <div id="genre-tabs"></div>
+    <div id="palette"></div>
+    <div id="paint-hint"></div>
+    <div id="cal-head">
+      <button class="nav" id="btn-prev">‹</button>
+      <div id="cal-title"></div>
+      <button id="btn-today">今日</button>
+      <button class="nav" id="btn-next">›</button>
+    </div>
+    <div id="cal-grid"></div>
+    <div id="legend"></div>
+  </div>
+
+  <!-- 仲間 -->
+  <div id="view-nakama" class="screen hidden">
+    <h1>仲間</h1>
+    <div class="card" id="nakama-list"></div>
+    <p class="sub">チェックした人の予定がカレンダーに表示されます。<br>名前をタップすると予定の一覧が見られます。</p>
+  </div>
+
+  <!-- 仲間の詳細 -->
+  <div id="view-member-detail" class="screen hidden">
+    <button style="color:var(--accent); font-weight:600; min-height:44px" onclick="showTab('nakama')">← 仲間一覧へ</button>
+    <h1 id="md-name"></h1>
+    <div id="md-body"></div>
+  </div>
+
+  <!-- じぶん -->
+  <div id="view-jibun" class="screen hidden">
+    <h1>じぶん</h1>
+    <div class="card">
+      <div class="row"><h2 id="my-name" style="margin:0"></h2><div class="spacer"></div>
+        <span class="sub" id="my-role"></span></div>
+      <button class="btn secondary" style="margin-top:14px" onclick="openPinChange(false)">PINを変える</button>
+      <button class="btn secondary" style="margin-top:10px" onclick="confirmLogout()">ログアウト</button>
+    </div>
+    <div class="card">
+      <h2>じぶんの予定</h2>
+      <div id="my-schedule"></div>
+    </div>
+    <div class="card hidden" id="admin-card">
+      <h2>管理者メニュー</h2>
+      <div style="margin-bottom:14px">
+        <div class="sub" style="margin-bottom:6px">仲間を追加(名前と最初のPIN)</div>
+        <input class="field" id="add-name" placeholder="名前(例: タロウ)" maxlength="20">
+        <input class="field" id="add-pin" placeholder="初期PIN(4桁の数字)" inputmode="numeric" maxlength="4" style="margin-top:8px">
+        <button class="btn" style="margin-top:10px" onclick="adminAddMember()">追加する</button>
+      </div>
+      <div class="sub" style="margin-bottom:6px">メンバー管理</div>
+      <div id="admin-members"></div>
+    </div>
+  </div>
+
+  <!-- タブバー -->
+  <div id="tabbar">
+    <button id="tab-cal" onclick="showTab('cal')"><span class="ticon">📅</span>カレンダー</button>
+    <button id="tab-nakama" onclick="showTab('nakama')"><span class="ticon">🏄</span>仲間<span id="nakama-dot" class="reddot hidden"></span></button>
+    <button id="tab-jibun" onclick="showTab('jibun')"><span class="ticon">👤</span>じぶん</button>
+  </div>
+</div>
+
+<!-- まとめてメモ -->
+<div id="bulk-memo-bar" class="hidden">
+  <span id="bulk-memo-text"></span>
+  <button onclick="openBulkMemo()">メモを付ける</button>
+  <button style="color:#B8C6CE" onclick="hideBulkMemoBar()">✕</button>
+</div>
+
+<!-- ボトムシート -->
+<div id="sheet-back" class="hidden" onclick="closeSheet()"></div>
+<div id="sheet" class="hidden"><div class="grip"></div><div id="sheet-body"></div></div>
+
+<!-- モーダル -->
+<div id="modal-back" class="hidden"><div id="modal"></div></div>
+
+<script>
+/* =====================================================================
+   設定・定数
+===================================================================== */
+const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+/* ジャンルと「行き方」(絵の具)の定義。
+   追加したいときはここに1行足すだけ(色は濃い順に)。 */
+const GENRES = ['sea', 'pool', 'abroad'];
+const INTENTS = {
+  sea: {
+    label: '海', accent: '#0E5A8A', accentWeak: '#E3EEF5',
+    intents: [
+      { key: 'go',           label: '行く',               color: '#0D5CA8' },
+      { key: 'maybe',        label: '行けたら行く',       color: '#4C8FCB' },
+      { key: 'if_someone',   label: '誰か行くなら行く',   color: '#8AB6DE' },
+      { key: 'pool_if_flat', label: '波が悪ければプール', color: '#BCD8EE' },
+    ],
+  },
+  pool: {
+    label: 'プール', accent: '#0E8C74', accentWeak: '#E1F2EE',
+    intents: [
+      { key: 'go',          label: '行く予定',           color: '#0E8C74' },
+      { key: 'if_someone',  label: '誰か行くなら行く',   color: '#54B39E' },
+      { key: 'range_ok',    label: 'この期間なら行ける', color: '#97D2C4' },
+    ],
+  },
+  abroad: {
+    label: '海外', accent: '#D9701E', accentWeak: '#FBEEDF',
+    intents: [
+      { key: 'go',          label: '行く',               color: '#D9701E' },
+      { key: 'month_ok',    label: '今月なら行ける',     color: '#EC9A52' },
+      { key: 'if_someone',  label: '誰か行くなら行ける', color: '#F5C491' },
+    ],
+  },
+};
+function intentDef(genre, key){
+  return (INTENTS[genre]?.intents || []).find(i => i.key === key)
+      || { key, label: key, color: '#9AA7AE' };
+}
+
+/* 仲間の色(バー・アイコン用)。member_id から安定的に決める */
+const MEMBER_COLORS = ['#5581C9','#C97055','#7A55C9','#55A0C9','#C9A455','#55C98F','#C955A8','#8FA655'];
+function memberColor(id){
+  let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return MEMBER_COLORS[h % MEMBER_COLORS.length];
+}
+
+/* =====================================================================
+   状態
+===================================================================== */
+const state = {
+  me: null,                 // {id, name, is_admin}
+  genre: 'sea',
+  paint: null,              // 選択中の絵の具キー('eraser' or intent key or null=閲覧)
+  calYear: 0, calMonth: 0,  // 表示中の年月(monthは0始まり)
+  monthRows: [],            // 表示月の availability 全行(全ジャンル)
+  members: [],              // 全メンバー
+  follows: new Set(),       // 自分がフォロー中のID
+  lastSeen: {},             // followee_id -> seen_at
+  tab: 'cal',
+  lastStroke: null,         // 直前になぞった範囲 {genre, dates[]}
+  loginMember: null,        // ログイン画面で選択中
+  pinDigits: '',
+};
+
+/* =====================================================================
+   小物
+===================================================================== */
+const $ = (id) => document.getElementById(id);
+let toastTimer = null;
+function toast(msg, isError){
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = isError ? 'show error' : 'show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 2600);
+}
+function spin(on){ $('spinner').classList.toggle('hidden', !on); }
+function esc(s){ const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+function ymd(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function todayStr(){ return ymd(new Date()); }
+function fmtDate(s){
+  const [y,m,d] = s.split('-').map(Number);
+  const w = ['日','月','火','水','木','金','土'][new Date(y, m-1, d).getDay()];
+  return `${m}/${d}(${w})`;
+}
+function setAccent(){
+  const g = INTENTS[state.genre];
+  document.documentElement.style.setProperty('--accent', g.accent);
+  document.documentElement.style.setProperty('--accent-weak', g.accentWeak);
+}
+
+/* =====================================================================
+   認証
+===================================================================== */
+async function ensureAnonSession(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) return session;
+  const { data, error } = await sb.auth.signInAnonymously();
+  if (error) {
+    toast('接続に失敗しました。電波の良いところでもう一度開いてください', true);
+    throw error;
+  }
+  return data.session;
+}
+
+async function loadExistingLogin(){
+  const { data: srow } = await sb.from('app_sessions').select('member_id').maybeSingle();
+  if (!srow) return null;
+  const { data: m } = await sb.from('members')
+    .select('id,name,is_admin').eq('id', srow.member_id).maybeSingle();
+  return m || null;
+}
+
+async function boot(){
+  spin(true);
+  try {
+    await ensureAnonSession();
+    const me = await loadExistingLogin();
+    if (me) { await enterApp(me); }
+    else { await showLogin(); }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    spin(false);
+  }
+}
+
+/* ---------- ログイン画面 ---------- */
+async function showLogin(){
+  $('app').classList.add('hidden');
+  $('login-screen').classList.remove('hidden');
+  $('login-step-name').classList.remove('hidden');
+  $('login-step-pin').classList.add('hidden');
+  const { data, error } = await sb.rpc('list_members_for_login');
+  const box = $('login-names');
+  if (error || !data || data.length === 0) {
+    box.innerHTML = '<p class="sub">名前を読み込めませんでした。開き直してみてください。</p>';
+    return;
+  }
+  box.innerHTML = data.map(m =>
+    `<button class="name-item" onclick="pickName('${m.id}', '${esc(m.name)}')">
+       <span class="avatar" style="background:${memberColor(m.id)}; width:34px; height:34px; font-size:.9rem">${esc(m.name[0])}</span>
+       ${esc(m.name)} <span class="arrow">›</span>
+     </button>`).join('');
+}
+
+function pickName(id, name){
+  state.loginMember = { id, name };
+  state.pinDigits = '';
+  $('pin-title').textContent = `${name} さんのPINを入れてね`;
+  $('pin-error').textContent = '';
+  renderPinPad();
+  renderPinBoxes();
+  $('login-step-name').classList.add('hidden');
+  $('login-step-pin').classList.remove('hidden');
+}
+function backToNames(){
+  $('login-step-pin').classList.add('hidden');
+  $('login-step-name').classList.remove('hidden');
+}
+function renderPinPad(){
+  const pad = $('pin-pad');
+  const keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
+  pad.innerHTML = keys.map(k =>
+    k === '' ? '<div></div>'
+      : `<button onclick="pinKey('${k}')">${k}</button>`).join('');
+}
+function renderPinBoxes(){
+  document.querySelectorAll('.pin-box').forEach((b, i) => {
+    b.textContent = state.pinDigits[i] ? '●' : '';
+    b.classList.toggle('filled', !!state.pinDigits[i]);
+  });
+}
+async function pinKey(k){
+  if (k === '⌫') { state.pinDigits = state.pinDigits.slice(0, -1); renderPinBoxes(); return; }
+  if (state.pinDigits.length >= 4) return;
+  state.pinDigits += k;
+  renderPinBoxes();
+  if (state.pinDigits.length === 4) await submitPin();
+}
+async function submitPin(){
+  spin(true);
+  const { data, error } = await sb.rpc('verify_pin', {
+    p_name: state.loginMember.name, p_pin: state.pinDigits });
+  spin(false);
+  state.pinDigits = '';
+  renderPinBoxes();
+  if (error) { $('pin-error').textContent = '通信エラーです。もう一度お試しください'; return; }
+  if (!data.ok) {
+    const msgs = {
+      wrong_pin: `PINが違います(あと${data.remaining}回間違えるとロックされます)`,
+      locked: `間違いが続いたためロック中です。あと${data.minutes}分ほど待ってください`,
+      not_found: 'メンバーが見つかりません',
+      no_pin: 'PINが未設定です。Yamaに連絡してください',
+      no_auth: '接続エラーです。開き直してください',
+    };
+    $('pin-error').textContent = msgs[data.error] || 'ログインできませんでした';
+    return;
+  }
+  const m = data.member;
+  await enterApp({ id: m.id, name: m.name, is_admin: m.is_admin });
+  if (!m.pin_change_prompted) offerFirstPinChange();
+}
+
+/* 初回だけ「PIN変える?」 */
+function offerFirstPinChange(){
+  openModal(`
+    <h2>PINを変えますか?</h2>
+    <p class="sub">最初のPINのままでも使えますが、じぶんだけのPINに変えておくと安心です。あとから「じぶん」タブでも変えられます。</p>
+    <button class="btn" onclick="closeModal(); openPinChange(true)">変える</button>
+    <button class="btn secondary" onclick="skipPinPrompt()">今はこのまま</button>
+  `);
+}
+async function skipPinPrompt(){
+  closeModal();
+  await sb.rpc('mark_pin_prompted');
+}
+
+/* ---------- アプリへ ---------- */
+async function enterApp(me){
+  state.me = me;
+  $('login-screen').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  const now = new Date();
+  state.calYear = now.getFullYear();
+  state.calMonth = now.getMonth();
+  setAccent();
+  renderGenreTabs();
+  renderPalette();
+  spin(true);
+  await refreshSocial();
+  await loadMonth();
+  spin(false);
+  renderCalendar();
+  updateNakamaBadge();
+  showTab('cal');
+}
+
+async function confirmLogout(){
+  openModal(`
+    <h2>ログアウトしますか?</h2>
+    <p class="sub">次に使うときは、名前とPINでもう一度ログインします。</p>
+    <button class="btn danger-outline" onclick="doLogout()">ログアウトする</button>
+    <button class="btn secondary" onclick="closeModal()">やめる</button>
+  `);
+}
+async function doLogout(){
+  closeModal(); spin(true);
+  try { await sb.from('app_sessions').delete().neq('member_id', '00000000-0000-0000-0000-000000000000'); } catch(e){}
+  await sb.auth.signOut();
+  state.me = null;
+  await ensureAnonSession();
+  spin(false);
+  await showLogin();
+}
+
+/* =====================================================================
+   データ読み込み
+===================================================================== */
+async function refreshSocial(){
+  const [{ data: members }, { data: follows }, { data: seen }] = await Promise.all([
+    sb.from('members').select('id,name,is_admin,last_activity_at').order('name'),
+    sb.from('follows').select('followee_id'),
+    sb.from('last_seen').select('followee_id,seen_at'),
+  ]);
+  state.members = members || [];
+  state.follows = new Set((follows || []).map(f => f.followee_id));
+  state.lastSeen = {};
+  (seen || []).forEach(r => { state.lastSeen[r.followee_id] = r.seen_at; });
+}
+
+function visibleMemberIds(){
+  const ids = new Set(state.follows);
+  ids.add(state.me.id);
+  return [...ids];
+}
+
+async function loadMonth(){
+  const first = new Date(state.calYear, state.calMonth, 1);
+  const last  = new Date(state.calYear, state.calMonth + 1, 0);
+  let q = sb.from('availability')
+    .select('member_id,genre,date,intent,note')
+    .gte('date', ymd(first)).lte('date', ymd(last));
+  if (!state.me.is_admin) q = q.in('member_id', visibleMemberIds());
+  const { data, error } = await q;
+  if (error) { toast('予定の読み込みに失敗しました', true); return; }
+  state.monthRows = data || [];
+}
+
+/* 表示月・現在ジャンルのデータを日付ごとに整理 */
+function dayMap(){
+  const mine = {}, others = {};
+  for (const r of state.monthRows) {
+    if (r.genre !== state.genre) continue;
+    if (r.member_id === state.me.id) mine[r.date] = r;
+    else {
+      if (!state.me.is_admin && !state.follows.has(r.member_id)) continue;
+      (others[r.date] = others[r.date] || []).push(r);
+    }
+  }
+  return { mine, others };
+}
+
+/* =====================================================================
+   カレンダー描画
+===================================================================== */
+function renderGenreTabs(){
+  $('genre-tabs').innerHTML = GENRES.map(g =>
+    `<button class="${g === state.genre ? 'active' : ''}" onclick="setGenre('${g}')">${INTENTS[g].label}</button>`
+  ).join('');
+}
+function setGenre(g){
+  state.genre = g;
+  state.paint = null;
+  setAccent();
+  renderGenreTabs();
+  renderPalette();
+  renderCalendar();
+}
+
+function renderPalette(){
+  const g = INTENTS[state.genre];
+  let html = g.intents.map(i =>
+    `<button class="chip ${state.paint === i.key ? 'selected' : ''}"
+       style="background:${i.color}" onclick="setPaint('${i.key}')">${i.label}</button>`).join('');
+  html += `<button class="chip eraser ${state.paint === 'eraser' ? 'selected' : ''}"
+       onclick="setPaint('eraser')">🧽 消しゴム</button>`;
+  $('palette').innerHTML = html;
+  $('paint-hint').textContent =
+    state.paint === 'eraser' ? '消したい日をなぞってね' :
+    state.paint ? `「${intentDef(state.genre, state.paint).label}」で塗るよ。日付をなぞってね` :
+    '絵の具を選ぶと塗れるよ。今は見るモード(日付タップでみんなの予定)';
+}
+function setPaint(key){
+  state.paint = (state.paint === key) ? null : key;
+  renderPalette();
+}
+
+function renderCalendar(){
+  $('cal-title').textContent = `${state.calYear}年${state.calMonth + 1}月`;
+  const { mine, others } = dayMap();
+  const first = new Date(state.calYear, state.calMonth, 1);
+  const daysInMonth = new Date(state.calYear, state.calMonth + 1, 0).getDate();
+  const startDow = first.getDay();
+  const tStr = todayStr();
+
+  let html = `<div class="cal-week">${['日','月','火','水','木','金','土'].map((w,i) =>
+    `<div class="dow ${i===0?'sun':i===6?'sat':''}">${w}</div>`).join('')}</div>`;
+
+  let cells = [];
+  for (let i = 0; i < startDow; i++) cells.push('<div class="day other-month"></div>');
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = ymd(new Date(state.calYear, state.calMonth, d));
+    const my = mine[ds];
+    const oth = (others[ds] || []);
+    const isPast = ds < tStr;
+    const cls = ['day'];
+    if (isPast) cls.push('past');
+    if (ds === tStr) cls.push('today');
+    let style = '';
+    if (my) { cls.push('painted'); style = `background:${intentDef(state.genre, my.intent).color}`; }
+    let bars = '';
+    if (oth.length) {
+      const show = oth.slice(0, 3);
+      bars = `<div class="bars">${show.map(r => {
+        const m = state.members.find(x => x.id === r.member_id);
+        return `<div class="bar" style="background:${memberColor(r.member_id)}">${esc((m?.name || '?')[0])}</div>`;
+      }).join('')}${oth.length > 3 ? `<div class="bar" style="background:#9AA7AE">+${oth.length-3}</div>` : ''}</div>`;
+    }
+    const noteMark = my && my.note ? '<span class="note-mark">📝</span>' : '';
+    cells.push(`<div class="${cls.join(' ')}" data-date="${ds}" ${style ? `style="${style}"` : ''}>
+      <span class="num">${d}</span>${noteMark}${bars}</div>`);
+  }
+  while (cells.length % 7 !== 0) cells.push('<div class="day other-month"></div>');
+  for (let i = 0; i < cells.length; i += 7) {
+    html += `<div class="cal-week">${cells.slice(i, i+7).join('')}</div>`;
+  }
+  $('cal-grid').innerHTML = html;
+
+  // 凡例
+  const g = INTENTS[state.genre];
+  $('legend').innerHTML = g.intents.map(i =>
+    `<span class="lg"><span class="sw" style="background:${i.color}"></span>${i.label}</span>`).join('')
+    + `<span class="lg"><span class="sw" style="background:#5581C9; border-radius:3px; height:8px; margin-top:3px"></span>仲間の予定(頭文字)</span>`;
+}
+
+function moveMonth(diff){
+  const d = new Date(state.calYear, state.calMonth + diff, 1);
+  state.calYear = d.getFullYear();
+  state.calMonth = d.getMonth();
+  reloadCalendar();
+}
+async function reloadCalendar(){
+  spin(true);
+  await loadMonth();
+  spin(false);
+  renderCalendar();
+}
+$('btn-prev').onclick = () => moveMonth(-1);
+$('btn-next').onclick = () => moveMonth(1);
+$('btn-today').onclick = () => {
+  const n = new Date();
+  state.calYear = n.getFullYear(); state.calMonth = n.getMonth();
+  reloadCalendar();
+};
+
+/* =====================================================================
+   なぞって塗る(Pointer Events)
+===================================================================== */
+const stroke = { active: false, mode: null, days: new Set(), startCell: null,
+                 longTimer: null, startX: 0, startY: 0, moved: false, cancelled: false };
+
+function cellFromPoint(x, y){
+  const el = document.elementFromPoint(x, y);
+  const cell = el && el.closest ? el.closest('.day') : null;
+  if (!cell || !cell.dataset.date || cell.classList.contains('past')) return null;
+  return cell;
+}
+
+$('cal-grid').addEventListener('pointerdown', (e) => {
+  const cell = cellFromPoint(e.clientX, e.clientY);
+  if (!cell) return;
+  const ds = cell.dataset.date;
+  const { mine } = dayMap();
+
+  // 閲覧モード → その日のみんなの予定シート
+  if (!state.paint) { openDaySheet(ds); return; }
+
+  e.preventDefault();
+  try { $('cal-grid').setPointerCapture(e.pointerId); } catch (err) {}
+
+  stroke.active = true; stroke.cancelled = false; stroke.moved = false;
+  stroke.days = new Set(); stroke.startCell = ds;
+  stroke.startX = e.clientX; stroke.startY = e.clientY;
+
+  if (state.paint === 'eraser') stroke.mode = 'erase';
+  else if (mine[ds] && mine[ds].intent === state.paint) stroke.mode = 'erase'; // 同じ絵の具→トグルで解除
+  else stroke.mode = 'paint';
+
+  applyStrokeToCell(cell, ds);
+
+  // 長押し(550ms・動かさない)→ メモ編集
+  clearTimeout(stroke.longTimer);
+  stroke.longTimer = setTimeout(() => {
+    if (stroke.active && !stroke.moved && stroke.days.size <= 1) {
+      stroke.cancelled = true; stroke.active = false;
+      renderCalendar();               // 見た目を元に戻す
+      openMemoSheet(state.genre, [ds]);
+    }
+  }, 550);
+});
+
+$('cal-grid').addEventListener('pointermove', (e) => {
+  if (!stroke.active) return;
+  if (Math.abs(e.clientX - stroke.startX) > 8 || Math.abs(e.clientY - stroke.startY) > 8) {
+    stroke.moved = true;
+    clearTimeout(stroke.longTimer);
+  }
+  const cell = cellFromPoint(e.clientX, e.clientY);
+  if (cell) applyStrokeToCell(cell, cell.dataset.date);
+});
+
+async function endStroke(){
+  clearTimeout(stroke.longTimer);
+  if (!stroke.active || stroke.cancelled) { stroke.active = false; return; }
+  stroke.active = false;
+  if (stroke.days.size === 0) return;
+  await commitStroke();
+}
+$('cal-grid').addEventListener('pointerup', endStroke);
+$('cal-grid').addEventListener('pointercancel', () => {
+  clearTimeout(stroke.longTimer);
+  if (stroke.active) { stroke.active = false; renderCalendar(); }
+});
+
+function applyStrokeToCell(cell, ds){
+  if (stroke.days.has(ds)) return;
+  stroke.days.add(ds);
+  // 見た目を即時反映
+  if (stroke.mode === 'paint') {
+    cell.classList.add('painted');
+    cell.style.background = intentDef(state.genre, state.paint).color;
+  } else {
+    cell.classList.remove('painted');
+    cell.style.background = '';
+  }
+}
+
+async function commitStroke(){
+  const dates = [...stroke.days];
+  const genre = state.genre;
+  let error = null;
+  if (stroke.mode === 'paint') {
+    const { mine } = dayMap();
+    const rows = dates.map(d => ({
+      member_id: state.me.id, genre, date: d, intent: state.paint,
+      note: mine[d]?.note ?? null,      // 上書き時もメモは残す
+    }));
+    ({ error } = await sb.from('availability')
+      .upsert(rows, { onConflict: 'member_id,genre,date' }));
+  } else {
+    ({ error } = await sb.from('availability').delete()
+      .eq('member_id', state.me.id).eq('genre', genre).in('date', dates));
+  }
+  if (error) {
+    console.error(error);
+    toast('保存に失敗しました。もう一度なぞってみてください', true);
+    await reloadCalendar();
+    return;
+  }
+  toast('保存しました');
+  await loadMonth();
+  renderCalendar();
+  if (stroke.mode === 'paint') {
+    state.lastStroke = { genre, dates: dates.sort() };
+    showBulkMemoBar();
+  } else {
+    hideBulkMemoBar();
+  }
+}
+
+/* まとめてメモ */
+let bulkTimer = null;
+function showBulkMemoBar(){
+  const n = state.lastStroke.dates.length;
+  $('bulk-memo-text').textContent = n === 1
+    ? fmtDate(state.lastStroke.dates[0]) : `${n}日分に`;
+  $('bulk-memo-bar').classList.remove('hidden');
+  clearTimeout(bulkTimer);
+  bulkTimer = setTimeout(hideBulkMemoBar, 6000);
+}
+function hideBulkMemoBar(){ $('bulk-memo-bar').classList.add('hidden'); clearTimeout(bulkTimer); }
+function openBulkMemo(){
+  hideBulkMemoBar();
+  if (state.lastStroke) openMemoSheet(state.lastStroke.genre, state.lastStroke.dates);
+}
+
+/* =====================================================================
+   ボトムシート
+===================================================================== */
+function openSheet(html){
+  $('sheet-body').innerHTML = html;
+  $('sheet').classList.remove('hidden');
+  $('sheet-back').classList.remove('hidden');
+}
+function closeSheet(){
+  $('sheet').classList.add('hidden');
+  $('sheet-back').classList.add('hidden');
+}
+
+/* その日の予定一覧(閲覧モードでタップ) */
+function openDaySheet(ds, genre){
+  genre = genre || state.genre;
+  const rows = state.monthRows.filter(r => r.date === ds && r.genre === genre
+    && (r.member_id === state.me.id || state.me.is_admin || state.follows.has(r.member_id)));
+  const gdef = INTENTS[genre];
+  const tabs = GENRES.map(g =>
+    `<button class="chip ${g === genre ? 'selected' : ''}"
+       style="background:${INTENTS[g].accent}; opacity:${g===genre?1:.5}"
+       onclick="openDaySheet('${ds}','${g}')">${INTENTS[g].label}</button>`).join('');
+  let list;
+  if (rows.length === 0) {
+    list = `<p class="sub" style="padding:16px 0">まだ誰も「${gdef.label}」の予定を入れていません</p>`;
+  } else {
+    list = rows.map(r => {
+      const m = state.members.find(x => x.id === r.member_id);
+      const isMe = r.member_id === state.me.id;
+      const idef = intentDef(genre, r.intent);
+      return `<div class="sheet-person">
+        <div class="avatar" style="background:${memberColor(r.member_id)}">${esc((m?.name||'?')[0])}</div>
+        <div style="flex:1">
+          <div><b>${esc(m?.name || '?')}</b>${isMe ? ' <span class="sub">(じぶん)</span>' : ''}</div>
+          <div style="margin-top:4px"><span class="intent-tag" style="background:${idef.color}">${idef.label}</span></div>
+          ${r.note ? `<div class="sub" style="margin-top:6px">📝 ${esc(r.note)}</div>` : ''}
+        </div>
+        ${isMe ? `<button style="color:var(--accent); font-weight:600; min-height:44px"
+            onclick="openMemoSheet('${genre}', ['${ds}'])">メモ</button>` : ''}
+      </div>`;
+    }).join('');
+  }
+  openSheet(`
+    <h2>${fmtDate(ds)} の予定</h2>
+    <div style="display:flex; gap:8px; margin:10px 0 6px">${tabs}</div>
+    ${list}
+  `);
+}
+
+/* メモ入力シート */
+function openMemoSheet(genre, dates){
+  const { mine } = (genre === state.genre) ? dayMap() : { mine: {} };
+  const cur = state.monthRows.find(r =>
+    r.member_id === state.me.id && r.genre === genre && r.date === dates[0]);
+  const label = dates.length === 1
+    ? fmtDate(dates[0])
+    : `${fmtDate(dates[0])} 〜 ${fmtDate(dates[dates.length-1])}(${dates.length}日分)`;
+  openSheet(`
+    <h2>一言メモ</h2>
+    <p class="sub">${label} / ${INTENTS[genre].label}</p>
+    <textarea class="field" id="memo-input" rows="3" maxlength="200"
+      placeholder="例: 朝イチだけ・○○ポイント希望 など">${esc(cur?.note || '')}</textarea>
+    <button class="btn" style="margin-top:12px"
+      onclick="saveMemo('${genre}', ${JSON.stringify(dates).replace(/"/g,'&quot;')})">保存する</button>
+    <button class="btn secondary" style="margin-top:8px" onclick="closeSheet()">やめる</button>
+  `);
+  setTimeout(() => $('memo-input').focus(), 100);
+}
+async function saveMemo(genre, dates){
+  const note = $('memo-input').value.trim() || null;
+  spin(true);
+  const { error } = await sb.from('availability')
+    .update({ note })
+    .eq('member_id', state.me.id).eq('genre', genre).in('date', dates);
+  spin(false);
+  if (error) { toast('メモの保存に失敗しました', true); return; }
+  closeSheet();
+  toast('メモを保存しました');
+  await loadMonth();
+  renderCalendar();
+}
+
+/* =====================================================================
+   タブ切り替え
+===================================================================== */
+async function showTab(tab){
+  state.tab = tab;
+  for (const t of ['cal','nakama','jibun']) {
+    $(`view-${t}`).classList.toggle('hidden', t !== tab);
+    $(`tab-${t}`).classList.toggle('active', t === tab);
+  }
+  $('view-member-detail').classList.add('hidden');
+  if (tab === 'nakama') await renderNakama();
+  if (tab === 'jibun') await renderJibun();
+  if (tab === 'cal') { await refreshSocial(); await loadMonth(); renderCalendar(); updateNakamaBadge(); }
+  window.scrollTo(0, 0);
+}
+
+/* =====================================================================
+   仲間タブ
+===================================================================== */
+function hasRedDot(m){
+  if (!state.follows.has(m.id) || !m.last_activity_at) return false;
+  const seen = state.lastSeen[m.id];
+  return !seen || new Date(m.last_activity_at) > new Date(seen);
+}
+function updateNakamaBadge(){
+  const any = state.members.some(m => m.id !== state.me.id && hasRedDot(m));
+  $('nakama-dot').classList.toggle('hidden', !any);
+}
+
+async function renderNakama(){
+  spin(true);
+  await refreshSocial();
+  spin(false);
+  const others = state.members.filter(m => m.id !== state.me.id);
+  if (others.length === 0) {
+    $('nakama-list').innerHTML = '<p class="sub">まだ仲間がいません。Yamaが「じぶん」タブから追加できます。</p>';
+    updateNakamaBadge();
+    return;
+  }
+  $('nakama-list').innerHTML = others.map(m => {
+    const dot = hasRedDot(m) ? '<span class="reddot-inline"></span>' : '';
+    const last = m.last_activity_at
+      ? `最終更新 ${new Date(m.last_activity_at).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})}`
+      : 'まだ予定なし';
+    return `<div class="member-row">
+      <button class="member-name-btn" onclick="openMemberDetail('${m.id}')">
+        <span class="avatar" style="background:${memberColor(m.id)}">${esc(m.name[0])}</span>
+        <span><b>${esc(m.name)}</b>${dot}<br><span class="sub">${last}</span></span>
+      </button>
+      <label class="row" style="gap:6px">
+        <span class="sub">表示</span>
+        <input type="checkbox" class="check" ${state.follows.has(m.id) ? 'checked' : ''}
+          onchange="toggleFollow('${m.id}', this.checked)">
+      </label>
+    </div>`;
+  }).join('');
+
+  // この画面を見た=既読。赤丸を消す(表示上は次回から消える)
+  await markAllSeen();
+}
+
+async function markAllSeen(){
+  const rows = [...state.follows].map(fid => ({
+    member_id: state.me.id, followee_id: fid, seen_at: new Date().toISOString() }));
+  if (rows.length === 0) { updateNakamaBadge(); return; }
+  await sb.from('last_seen').upsert(rows, { onConflict: 'member_id,followee_id' });
+  rows.forEach(r => { state.lastSeen[r.followee_id] = r.seen_at; });
+  updateNakamaBadge();
+}
+
+async function toggleFollow(id, on){
+  if (on) {
+    await sb.from('follows').insert({ follower_id: state.me.id, followee_id: id });
+    state.follows.add(id);
+    await sb.from('last_seen').upsert(
+      { member_id: state.me.id, followee_id: id, seen_at: new Date().toISOString() },
+      { onConflict: 'member_id,followee_id' });
+  } else {
+    await sb.from('follows').delete()
+      .eq('follower_id', state.me.id).eq('followee_id', id);
+    state.follows.delete(id);
+  }
+  toast(on ? 'カレンダーに表示します' : '表示をやめました');
+}
+
+/* 仲間の詳細(今月〜来月) */
+async function openMemberDetail(id){
+  const m = state.members.find(x => x.id === id);
+  if (!m) return;
+  spin(true);
+  const now = new Date();
+  const from = ymd(new Date(now.getFullYear(), now.getMonth(), 1));
+  const to   = ymd(new Date(now.getFullYear(), now.getMonth() + 2, 0));
+  const { data } = await sb.from('availability')
+    .select('genre,date,intent,note')
+    .eq('member_id', id).gte('date', from).lte('date', to)
+    .order('date');
+  // 既読にする
+  if (state.follows.has(id)) {
+    const t = new Date().toISOString();
+    await sb.from('last_seen').upsert(
+      { member_id: state.me.id, followee_id: id, seen_at: t },
+      { onConflict: 'member_id,followee_id' });
+    state.lastSeen[id] = t;
+    updateNakamaBadge();
+  }
+  spin(false);
+  $('md-name').innerHTML = `<span class="avatar" style="background:${memberColor(id)}; display:inline-flex; width:32px; height:32px; font-size:.95rem; vertical-align:middle; margin-right:8px">${esc(m.name[0])}</span>${esc(m.name)} の予定`;
+  let body = '';
+  for (const g of GENRES) {
+    const rows = (data || []).filter(r => r.genre === g);
+    if (rows.length === 0) continue;
+    body += `<div class="card"><h2>${INTENTS[g].label}</h2>` + rows.map(r => {
+      const idef = intentDef(g, r.intent);
+      return `<div class="mylist-day">
+        <span style="min-width:74px">${fmtDate(r.date)}</span>
+        <span class="intent-tag" style="background:${idef.color}">${idef.label}</span>
+        ${r.note ? `<span class="sub" style="flex:1">📝${esc(r.note)}</span>` : ''}
+      </div>`;
+    }).join('') + '</div>';
+  }
+  $('md-body').innerHTML = body ||
+    '<div class="card"><p class="sub">今月と来月の予定はまだありません</p></div>';
+  $('view-nakama').classList.add('hidden');
+  $('view-member-detail').classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
+/* =====================================================================
+   じぶんタブ
+===================================================================== */
+async function renderJibun(){
+  $('my-name').textContent = state.me.name;
+  $('my-role').textContent = state.me.is_admin ? '管理者' : '';
+  spin(true);
+  const now = new Date();
+  const from = ymd(new Date(now.getFullYear(), now.getMonth(), 1));
+  const { data } = await sb.from('availability')
+    .select('id,genre,date,intent,note')
+    .eq('member_id', state.me.id).gte('date', from).order('date');
+  spin(false);
+
+  const byMonth = {};
+  (data || []).forEach(r => {
+    const key = r.date.slice(0, 7);
+    (byMonth[key] = byMonth[key] || []).push(r);
+  });
+  let html = '';
+  for (const key of Object.keys(byMonth).sort()) {
+    const [y, mo] = key.split('-');
+    html += `<div style="font-weight:700; margin:12px 0 4px">${Number(y)}年${Number(mo)}月</div>`;
+    html += byMonth[key].map(r => {
+      const idef = intentDef(r.genre, r.intent);
+      return `<div class="mylist-day">
+        <span style="min-width:74px">${fmtDate(r.date)}</span>
+        <span class="intent-tag" style="background:${idef.color}">${INTENTS[r.genre].label}・${idef.label}</span>
+        ${r.note ? `<span class="sub" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">📝${esc(r.note)}</span>` : '<span class="spacer"></span>'}
+        <button class="del-btn" onclick="deleteMyDay('${r.id}')">🗑</button>
+      </div>`;
+    }).join('');
+  }
+  $('my-schedule').innerHTML = html || '<p class="sub">今月以降の予定はまだありません</p>';
+
+  // 管理者メニュー
+  if (state.me.is_admin) {
+    $('admin-card').classList.remove('hidden');
+    await refreshSocial();
+    $('admin-members').innerHTML = state.members.map(m => `
+      <div class="member-row">
+        <span class="avatar" style="background:${memberColor(m.id)}">${esc(m.name[0])}</span>
+        <span style="flex:1"><b>${esc(m.name)}</b>${m.is_admin ? ' <span class="sub">(管理者)</span>' : ''}</span>
+        <button style="color:var(--accent); min-height:44px; font-size:.85rem"
+          onclick="adminResetPin('${m.id}', '${esc(m.name)}')">PINリセット</button>
+        ${m.id !== state.me.id ? `<button class="del-btn" onclick="adminDeleteConfirm('${m.id}', '${esc(m.name)}')">🗑</button>` : ''}
+      </div>`).join('');
+  } else {
+    $('admin-card').classList.add('hidden');
+  }
+}
+
+async function deleteMyDay(id){
+  const { error } = await sb.from('availability').delete().eq('id', id);
+  if (error) { toast('削除に失敗しました', true); return; }
+  toast('削除しました');
+  await renderJibun();
+}
+
+/* ---------- PIN変更 ---------- */
+function openPinChange(isFirst){
+  openModal(`
+    <h2>PINを変える</h2>
+    <label class="sub">今のPIN${isFirst ? '(最初に教えてもらった4桁)' : ''}</label>
+    <input class="field" id="pc-cur" inputmode="numeric" maxlength="4" placeholder="0000" style="margin:4px 0 12px">
+    <label class="sub">新しいPIN(4桁の数字)</label>
+    <input class="field" id="pc-new" inputmode="numeric" maxlength="4" style="margin:4px 0 12px">
+    <label class="sub">新しいPIN(もう一度)</label>
+    <input class="field" id="pc-new2" inputmode="numeric" maxlength="4" style="margin:4px 0">
+    <p class="pin-error" id="pc-error"></p>
+    <button class="btn" onclick="submitPinChange()">変更する</button>
+    <button class="btn secondary" onclick="closeModal()">やめる</button>
+  `);
+}
+async function submitPinChange(){
+  const cur = $('pc-cur').value, nw = $('pc-new').value, nw2 = $('pc-new2').value;
+  const err = $('pc-error');
+  if (!/^[0-9]{4}$/.test(nw)) { err.textContent = '新しいPINは4桁の数字にしてください'; return; }
+  if (nw !== nw2) { err.textContent = '新しいPINが2回とも同じか確認してください'; return; }
+  spin(true);
+  const { error } = await sb.rpc('change_pin', { p_current: cur, p_new: nw });
+  spin(false);
+  if (error) {
+    err.textContent = (error.message || '').includes('今のPIN') ? '今のPINが違います' : '変更に失敗しました';
+    return;
+  }
+  closeModal();
+  toast('PINを変更しました');
+}
+
+/* ---------- 管理者操作 ---------- */
+async function adminAddMember(){
+  const name = $('add-name').value.trim();
+  const pin = $('add-pin').value.trim();
+  if (!name) { toast('名前を入れてください', true); return; }
+  if (!/^[0-9]{4}$/.test(pin)) { toast('初期PINは4桁の数字にしてください', true); return; }
+  spin(true);
+  const { error } = await sb.rpc('admin_add_member', { p_name: name, p_pin: pin });
+  spin(false);
+  if (error) {
+    toast((error.message || '').includes('すでに') ? '同じ名前の人がすでにいます' : '追加に失敗しました', true);
+    return;
+  }
+  $('add-name').value = ''; $('add-pin').value = '';
+  toast(`${name} さんを追加しました。名前と初期PINを本人に伝えてね`);
+  await renderJibun();
+}
+
+function adminResetPin(id, name){
+  openModal(`
+    <h2>${esc(name)} さんのPINリセット</h2>
+    <label class="sub">新しいPIN(4桁の数字)</label>
+    <input class="field" id="rp-pin" inputmode="numeric" maxlength="4" style="margin:6px 0">
+    <p class="pin-error" id="rp-error"></p>
+    <button class="btn" onclick="submitResetPin('${id}', '${esc(name)}')">リセットする</button>
+    <button class="btn secondary" onclick="closeModal()">やめる</button>
+  `);
+}
+async function submitResetPin(id, name){
+  const pin = $('rp-pin').value.trim();
+  if (!/^[0-9]{4}$/.test(pin)) { $('rp-error').textContent = '4桁の数字にしてください'; return; }
+  spin(true);
+  const { error } = await sb.rpc('admin_set_pin', { p_member_id: id, p_new: pin });
+  spin(false);
+  if (error) { $('rp-error').textContent = 'リセットに失敗しました'; return; }
+  closeModal();
+  toast(`${name} さんのPINをリセットしました`);
+}
+
+function adminDeleteConfirm(id, name){
+  openModal(`
+    <h2>${esc(name)} さんを削除しますか?</h2>
+    <p class="sub">この人の予定もすべて消えます。元に戻せません。</p>
+    <button class="btn danger-outline" onclick="adminDeleteMember('${id}', '${esc(name)}')">削除する</button>
+    <button class="btn secondary" onclick="closeModal()">やめる</button>
+  `);
+}
+async function adminDeleteMember(id, name){
+  closeModal(); spin(true);
+  const { error } = await sb.rpc('admin_delete_member', { p_member_id: id });
+  spin(false);
+  if (error) { toast('削除に失敗しました', true); return; }
+  toast(`${name} さんを削除しました`);
+  await renderJibun();
+}
+
+/* ---------- モーダル ---------- */
+function openModal(html){
+  $('modal').innerHTML = html;
+  $('modal-back').classList.remove('hidden');
+}
+function closeModal(){ $('modal-back').classList.add('hidden'); }
+
+/* =====================================================================
+   起動・Service Worker
+===================================================================== */
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+boot();
+</script>
+</body>
+</html>

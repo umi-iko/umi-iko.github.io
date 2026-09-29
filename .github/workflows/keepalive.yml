@@ -1,0 +1,35 @@
+name: Supabase Keepalive
+
+# Supabase無料プランは、しばらくアクセスがないとプロジェクトが一時停止します。
+# それを防ぐため、3日ごとに keepalive テーブルへ軽いアクセスを1回送ります。
+#
+# 必要な準備(READMEのステップ6参照):
+#   リポジトリの Settings → Secrets and variables → Actions に
+#   SUPABASE_URL と SUPABASE_ANON_KEY を登録しておくこと。
+
+on:
+  schedule:
+    - cron: '17 0 */3 * *'   # 3日ごと UTC 0:17(日本時間 9:17ごろ)
+  workflow_dispatch:          # 手動実行も可能(Actionsタブから)
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          if [ -z "${{ secrets.SUPABASE_URL }}" ] || [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
+            echo "Secrets(SUPABASE_URL / SUPABASE_ANON_KEY)が未登録です。READMEのステップ6を見てください。"
+            exit 1
+          fi
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/keepalive?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ]; then
+            echo "Supabase is alive."
+          else
+            echo "Ping failed with status $STATUS"
+            exit 1
+          fi
