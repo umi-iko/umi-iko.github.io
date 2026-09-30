@@ -157,6 +157,9 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 .day.today .num{background:var(--accent); color:#fff; border-radius:50%;
   width:24px; height:24px; display:flex; align-items:center; justify-content:center;}
 .day.painted .num{color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.25);}
+.day.painted-light .num{color:var(--text); text-shadow:none;}
+.day.painted-light .dots .more{color:var(--text);}
+.chip.chip-go{font-weight:800;}
 .day .note-mark{position:absolute; top:3px; right:4px; font-size:.6rem; z-index:1;}
 /* 仲間の予定: 1人=1つの色点(最大10個、超えたら +n) */
 .day .dots{position:absolute; bottom:3px; left:3px; right:3px; display:flex; flex-wrap:wrap;
@@ -326,35 +329,38 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
 /* ジャンルと「行き方」(絵の具)の定義。
-   追加したいときはここに1行足すだけ(色は濃い順に)。 */
+   追加したいときはここに1行足すだけ(色は濃い順に)。
+   light: true は淡い色(文字を白ではなく濃い色で表示する) */
 const GENRES = ['sea', 'pool', 'abroad'];
 const INTENTS = {
   sea: {
     label: '海', accent: '#0E5A8A', accentWeak: '#E3EEF5',
     intents: [
-      { key: 'go',           label: '行く',               color: '#0D5CA8' },
-      { key: 'maybe',        label: '行けたら行く',       color: '#4C8FCB' },
-      { key: 'if_someone',   label: '誰か行くなら行く',   color: '#8AB6DE' },
-      { key: 'pool_if_flat', label: '波が悪ければプール', color: '#BCD8EE' },
+      { key: 'go',         label: '行く',       color: '#06306A' },
+      { key: 'if_someone', label: '誰か行こう', color: '#7FB0DE', light: true },
+      { key: 'maybe',      label: 'ワンチャン', color: '#C4DCF1', light: true },
     ],
   },
   pool: {
     label: 'プール', accent: '#0E8C74', accentWeak: '#E1F2EE',
     intents: [
-      { key: 'go',          label: '行く予定',           color: '#0E8C74' },
-      { key: 'if_someone',  label: '誰か行くなら行く',   color: '#54B39E' },
-      { key: 'range_ok',    label: 'この期間なら行ける', color: '#97D2C4' },
+      { key: 'go',         label: '行く',       color: '#03594A' },
+      { key: 'if_someone', label: '誰か行こう', color: '#6CC8B2', light: true },
+      { key: 'maybe',      label: 'ワンチャン', color: '#BCE6DB', light: true },
     ],
   },
   abroad: {
     label: '海外', accent: '#D9701E', accentWeak: '#FBEEDF',
     intents: [
-      { key: 'go',          label: '行く',               color: '#D9701E' },
-      { key: 'month_ok',    label: '今月なら行ける',     color: '#EC9A52' },
-      { key: 'if_someone',  label: '誰か行くなら行ける', color: '#F5C491' },
+      { key: 'go',         label: '行く',       color: '#9A3F00' },
+      { key: 'if_someone', label: '誰か行こう', color: '#F2A866', light: true },
+      { key: 'maybe',      label: 'ワンチャン', color: '#F9D6B0', light: true },
     ],
   },
 };
+/* 以前の「行き方」は、いまの項目に読み替えて表示する(保存済みデータ用) */
+const LEGACY_INTENTS = { pool_if_flat: 'maybe', range_ok: 'maybe', month_ok: 'maybe' };
+const normIntent = (k) => LEGACY_INTENTS[k] || k;
 /* トリップ調整帳の絵の具(全トリップ共通)。ジャンル名は 'trip:<id>' で扱う */
 const TRIP_DEF = {
   label: 'トリップ', accent: '#6E4FBF', accentWeak: '#EEE9F8',
@@ -373,9 +379,13 @@ function genreDef(g){
   return INTENTS[g];
 }
 function intentDef(genre, key){
+  key = normIntent(key);
   return (genreDef(genre)?.intents || []).find(i => i.key === key)
       || { key, label: key, color: '#9AA7AE' };
 }
+/* 淡い色の上では文字を濃くする */
+const INK = '#22333B';
+function textOn(idef){ return idef.light ? INK : '#fff'; }
 /* 保存先テーブル(通常ジャンル / トリップ)の違いを吸収 */
 function availTarget(genre){
   return isTrip(genre)
@@ -711,8 +721,8 @@ async function setGenre(g){
 function renderPalette(){
   const g = genreDef(state.genre);
   let html = g.intents.map(i =>
-    `<button class="chip ${state.paint === i.key ? 'selected' : ''}"
-       style="background:${i.color}" onclick="setPaint('${i.key}')">${i.label}</button>`).join('');
+    `<button class="chip ${state.paint === i.key ? 'selected' : ''} ${i.key === 'go' ? 'chip-go' : ''}"
+       style="background:${i.color}; color:${textOn(i)}" onclick="setPaint('${i.key}')">${i.label}</button>`).join('');
   html += `<button class="chip eraser ${state.paint === 'eraser' ? 'selected' : ''}"
        onclick="setPaint('eraser')">🧽 消しゴム</button>`;
   $('palette').innerHTML = html;
@@ -810,7 +820,11 @@ function renderCalendar(){
     if (isPast) cls.push('past');
     if (ds === tStr) cls.push('today');
     let style = '';
-    if (my) { cls.push('painted'); style = `background:${intentDef(state.genre, my.intent).color}`; }
+    if (my) {
+      const idef = intentDef(state.genre, my.intent);
+      cls.push('painted'); if (idef.light) cls.push('painted-light');
+      style = `background:${idef.color}`;
+    }
     if (st) {
       if (st.allFree.has(ds)) cls.push('all-free');
       else if (st.allOk.has(ds)) cls.push('all-ok');
@@ -896,7 +910,7 @@ $('cal-grid').addEventListener('pointerdown', (e) => {
   stroke.startX = e.clientX; stroke.startY = e.clientY;
 
   if (state.paint === 'eraser') stroke.mode = 'erase';
-  else if (mine[ds] && mine[ds].intent === state.paint) stroke.mode = 'erase'; // 同じ絵の具→トグルで解除
+  else if (mine[ds] && normIntent(mine[ds].intent) === state.paint) stroke.mode = 'erase'; // 同じ絵の具→トグルで解除
   else stroke.mode = 'paint';
 
   applyStrokeToCell(cell, ds);
@@ -940,10 +954,12 @@ function applyStrokeToCell(cell, ds){
   stroke.days.add(ds);
   // 見た目を即時反映
   if (stroke.mode === 'paint') {
+    const idef = intentDef(state.genre, state.paint);
     cell.classList.add('painted');
-    cell.style.background = intentDef(state.genre, state.paint).color;
+    cell.classList.toggle('painted-light', !!idef.light);
+    cell.style.background = idef.color;
   } else {
-    cell.classList.remove('painted');
+    cell.classList.remove('painted', 'painted-light');
     cell.style.background = '';
   }
 }
@@ -1037,7 +1053,7 @@ function openDaySheet(ds, genre){
         <div class="avatar" style="background:${memberColor(r.member_id)}">${esc((m?.name||'?')[0])}</div>
         <div style="flex:1">
           <div><b>${esc(m?.name || '?')}</b>${isMe ? ' <span class="sub">(じぶん)</span>' : ''}</div>
-          <div style="margin-top:4px"><span class="intent-tag" style="background:${idef.color}">${idef.label}</span></div>
+          <div style="margin-top:4px"><span class="intent-tag" style="background:${idef.color}; color:${textOn(idef)}">${idef.label}</span></div>
           ${r.note ? `<div class="sub" style="margin-top:6px">📝 ${esc(r.note)}</div>` : ''}
         </div>
         ${isMe ? `<button style="color:var(--accent); font-weight:600; min-height:44px"
@@ -1313,7 +1329,7 @@ async function openMemberDetail(id){
       const idef = intentDef(g, r.intent);
       return `<div class="mylist-day">
         <span style="min-width:74px">${fmtDate(r.date)}</span>
-        <span class="intent-tag" style="background:${idef.color}">${idef.label}</span>
+        <span class="intent-tag" style="background:${idef.color}; color:${textOn(idef)}">${idef.label}</span>
         ${r.note ? `<span class="sub" style="flex:1">📝${esc(r.note)}</span>` : ''}
       </div>`;
     }).join('') + '</div>';
@@ -1352,7 +1368,7 @@ async function renderJibun(){
       const idef = intentDef(r.genre, r.intent);
       return `<div class="mylist-day">
         <span style="min-width:74px">${fmtDate(r.date)}</span>
-        <span class="intent-tag" style="background:${idef.color}">${INTENTS[r.genre].label}・${idef.label}</span>
+        <span class="intent-tag" style="background:${idef.color}; color:${textOn(idef)}">${INTENTS[r.genre].label}・${idef.label}</span>
         ${r.note ? `<span class="sub" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">📝${esc(r.note)}</span>` : '<span class="spacer"></span>'}
         <button class="del-btn" onclick="deleteMyDay('${r.id}')">🗑</button>
       </div>`;
