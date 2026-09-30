@@ -414,6 +414,7 @@ const state = {
   tab: 'cal',
   lastStroke: null,         // 直前になぞった範囲 {genre, dates[]}
   loginMember: null,        // ログイン画面で選択中
+  loginList: [],            // ログイン画面の名前リスト
   pinDigits: '',
 };
 
@@ -430,7 +431,10 @@ function toast(msg, isError){
   toastTimer = setTimeout(() => { t.className = ''; }, 2600);
 }
 function spin(on){ $('spinner').classList.toggle('hidden', !on); }
-function esc(s){ const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
 function ymd(d){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
@@ -494,14 +498,16 @@ async function showLogin(){
     box.innerHTML = '<p class="sub">名前を読み込めませんでした。開き直してみてください。</p>';
     return;
   }
+  state.loginList = data;
   box.innerHTML = data.map(m =>
-    `<button class="name-item" onclick="pickName('${m.id}', '${esc(m.name)}')">
+    `<button class="name-item" onclick="pickName('${m.id}')">
        <span class="avatar" style="background:${memberColor(m.id)}; width:34px; height:34px; font-size:.9rem">${esc(m.name[0])}</span>
        ${esc(m.name)} <span class="arrow">›</span>
      </button>`).join('');
 }
 
-function pickName(id, name){
+function pickName(id){
+  const name = (state.loginList.find(m => m.id === id) || {}).name || '';
   state.loginMember = { id, name };
   state.pinDigits = '';
   $('pin-title').textContent = `${name} さんのPINを入れてね`;
@@ -1363,8 +1369,8 @@ async function renderJibun(){
         <span class="avatar" style="background:${memberColor(m.id)}">${esc(m.name[0])}</span>
         <span style="flex:1"><b>${esc(m.name)}</b>${m.is_admin ? ' <span class="sub">(管理者)</span>' : ''}</span>
         <button style="color:var(--accent); min-height:44px; font-size:.85rem"
-          onclick="adminResetPin('${m.id}', '${esc(m.name)}')">PINリセット</button>
-        ${m.id !== state.me.id ? `<button class="del-btn" onclick="adminDeleteConfirm('${m.id}', '${esc(m.name)}')">🗑</button>` : ''}
+          onclick="adminResetPin('${m.id}')">PINリセット</button>
+        ${m.id !== state.me.id ? `<button class="del-btn" onclick="adminDeleteConfirm('${m.id}')">🗑</button>` : ''}
       </div>`).join('');
   } else {
     $('admin-card').classList.add('hidden');
@@ -1427,17 +1433,19 @@ async function adminAddMember(){
   await renderJibun();
 }
 
-function adminResetPin(id, name){
+function adminResetPin(id){
+  const name = memberName(id);
   openModal(`
     <h2>${esc(name)} さんのPINリセット</h2>
     <label class="sub">新しいPIN(4桁の数字)</label>
     <input class="field" id="rp-pin" inputmode="numeric" maxlength="4" style="margin:6px 0">
     <p class="pin-error" id="rp-error"></p>
-    <button class="btn" onclick="submitResetPin('${id}', '${esc(name)}')">リセットする</button>
+    <button class="btn" onclick="submitResetPin('${id}')">リセットする</button>
     <button class="btn secondary" onclick="closeModal()">やめる</button>
   `);
 }
-async function submitResetPin(id, name){
+async function submitResetPin(id){
+  const name = memberName(id);
   const pin = $('rp-pin').value.trim();
   if (!/^[0-9]{4}$/.test(pin)) { $('rp-error').textContent = '4桁の数字にしてください'; return; }
   spin(true);
@@ -1448,15 +1456,17 @@ async function submitResetPin(id, name){
   toast(`${name} さんのPINをリセットしました`);
 }
 
-function adminDeleteConfirm(id, name){
+function adminDeleteConfirm(id){
+  const name = memberName(id);
   openModal(`
     <h2>${esc(name)} さんを削除しますか?</h2>
     <p class="sub">この人の予定もすべて消えます。元に戻せません。</p>
-    <button class="btn danger-outline" onclick="adminDeleteMember('${id}', '${esc(name)}')">削除する</button>
+    <button class="btn danger-outline" onclick="adminDeleteMember('${id}')">削除する</button>
     <button class="btn secondary" onclick="closeModal()">やめる</button>
   `);
 }
-async function adminDeleteMember(id, name){
+async function adminDeleteMember(id){
+  const name = memberName(id);
   closeModal(); spin(true);
   const { error } = await sb.rpc('admin_delete_member', { p_member_id: id });
   spin(false);
