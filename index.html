@@ -138,9 +138,13 @@ h2{font-size:1.05rem; margin:0 0 10px;}
   width:24px; height:24px; display:flex; align-items:center; justify-content:center;}
 .day.painted .num{color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.25);}
 .day .note-mark{position:absolute; top:3px; right:4px; font-size:.6rem; z-index:1;}
-.day .bars{position:absolute; bottom:3px; left:4px; right:4px; display:flex; gap:2px; height:12px;}
-.day .bars .bar{flex:1; border-radius:3px; color:#fff; font-size:.55rem; font-weight:700;
-  display:flex; align-items:center; justify-content:center; overflow:hidden; line-height:1;}
+/* 仲間の予定: 1人=1つの色点(最大10個、超えたら +n) */
+.day .dots{position:absolute; bottom:3px; left:3px; right:3px; display:flex; flex-wrap:wrap;
+  gap:2px; justify-content:center; align-content:flex-end; max-height:22px; overflow:hidden;}
+.day .dots .dot{width:6px; height:6px; border-radius:50%; flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.8);}
+.day .dots .more{font-size:.5rem; font-weight:700; color:var(--text); line-height:6px; height:6px;}
+.day.painted .dots .more{color:#fff;}
 #legend{margin-top:10px; display:flex; flex-wrap:wrap; gap:8px 14px; font-size:.75rem; color:var(--sub);}
 #legend .lg{display:flex; align-items:center; gap:4px;}
 #legend .sw{width:14px; height:14px; border-radius:4px;}
@@ -659,17 +663,18 @@ function renderCalendar(){
     if (ds === tStr) cls.push('today');
     let style = '';
     if (my) { cls.push('painted'); style = `background:${intentDef(state.genre, my.intent).color}`; }
-    let bars = '';
+    // 仲間の予定は人数分の色点で表示(10人まで。超えたら +n)
+    let dots = '';
     if (oth.length) {
-      const show = oth.slice(0, 3);
-      bars = `<div class="bars">${show.map(r => {
-        const m = state.members.find(x => x.id === r.member_id);
-        return `<div class="bar" style="background:${memberColor(r.member_id)}">${esc((m?.name || '?')[0])}</div>`;
-      }).join('')}${oth.length > 3 ? `<div class="bar" style="background:#9AA7AE">+${oth.length-3}</div>` : ''}</div>`;
+      const MAX_DOTS = 10;
+      const show = oth.slice(0, MAX_DOTS);
+      dots = `<div class="dots">${show.map(r =>
+        `<span class="dot" style="background:${memberColor(r.member_id)}"></span>`).join('')}${
+        oth.length > MAX_DOTS ? `<span class="more">+${oth.length - MAX_DOTS}</span>` : ''}</div>`;
     }
     const noteMark = my && my.note ? '<span class="note-mark">📝</span>' : '';
     cells.push(`<div class="${cls.join(' ')}" data-date="${ds}" ${style ? `style="${style}"` : ''}>
-      <span class="num">${d}</span>${noteMark}${bars}</div>`);
+      <span class="num">${d}</span>${noteMark}${dots}</div>`);
   }
   while (cells.length % 7 !== 0) cells.push('<div class="day other-month"></div>');
   for (let i = 0; i < cells.length; i += 7) {
@@ -681,7 +686,7 @@ function renderCalendar(){
   const g = INTENTS[state.genre];
   $('legend').innerHTML = g.intents.map(i =>
     `<span class="lg"><span class="sw" style="background:${i.color}"></span>${i.label}</span>`).join('')
-    + `<span class="lg"><span class="sw" style="background:#5581C9; border-radius:3px; height:8px; margin-top:3px"></span>仲間の予定(頭文字)</span>`;
+    + `<span class="lg"><span class="sw" style="background:#5581C9; border-radius:50%; width:8px; height:8px"></span>仲間の予定(1人=1つ・タップで名前)</span>`;
 }
 
 function moveMonth(diff){
