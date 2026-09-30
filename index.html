@@ -345,7 +345,7 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
   <div id="view-cal" class="screen">
     <div id="genre-tabs"></div>
     <div class="palette-box">
-      <div class="palette-label">🎨 絵の具 ─ 選んでカレンダーをなぞる</div>
+      <div class="palette-label">選んでカレンダーをなぞる</div>
       <div id="palette"></div>
       <div id="paint-hint"></div>
     </div>
@@ -859,6 +859,10 @@ async function confirmLogout(){
 }
 async function doLogout(){
   closeModal(); spin(true);
+  // 開いていたトリップページ・募集ページを閉じて、次の人はカレンダーから始まるようにする
+  stopPostPolling(); state.tripPageId = null; state.recruitPageId = null;
+  $('view-trip').classList.add('hidden'); $('view-recruit').classList.add('hidden');
+  $('view-cal').classList.remove('hidden');
   try { await sb.from('app_sessions').delete().neq('member_id', '00000000-0000-0000-0000-000000000000'); } catch(e){}
   await sb.auth.signOut();
   state.me = null;
@@ -1026,8 +1030,8 @@ function renderPalette(){
   $('paint-hint').textContent =
     state.paint === 'eraser' ? '消したい日をなぞってね(過去の日は「行かなかった」になります)' :
     state.paint === 'went' ? '実際に行った日(過去)をなぞってね。もう一度なぞると取り消し' :
-    state.paint ? `「${intentDef(state.genre, state.paint).label}」で塗るよ。日付をなぞってね` :
-    '絵の具を選ぶと塗れるよ。今は見るモード(日付タップでみんなの予定)';
+    state.paint ? `「${intentDef(state.genre, state.paint).label}」にする日をなぞってね(もう一度なぞると取り消し)` :
+    '上のボタンをどれか選ぶと、なぞった日に予定が入ります。今は日付タップでみんなの予定が見られます';
 }
 function setPaint(key){
   state.paint = (state.paint === key) ? null : key;
@@ -1303,7 +1307,7 @@ $('cal-grid').addEventListener('pointerdown', (e) => {
 
   if (state.paint === 'eraser') stroke.mode = 'erase';
   else if (state.paint === 'went') stroke.mode = wentMap()[ds] === true ? 'erase' : 'paint';   // 行った→もう一度で取り消し
-  else if (mine[ds] && normIntent(mine[ds].intent) === state.paint) stroke.mode = 'erase'; // 同じ絵の具→トグルで解除
+  else if (mine[ds] && normIntent(mine[ds].intent) === state.paint) stroke.mode = 'erase'; // 同じ行き方→トグルで解除
   else stroke.mode = 'paint';
 
   applyStrokeToCell(cell, ds);
@@ -1342,6 +1346,36 @@ $('cal-grid').addEventListener('pointercancel', () => {
   clearTimeout(stroke.longTimer);
   if (stroke.active) { stroke.active = false; renderCalendar(); }
 });
+
+// ===== 横スワイプで隣のタブへ(海 → プール → 海外 → トリップ…) =====
+// スマホのタッチだけが対象。塗るモードでカレンダー上をなぞっているときは反応しない。
+const swipe = { x: 0, y: 0, t: 0, ok: false };
+function genreOrder(){ return [...GENRES, ...state.trips.map(t => 'trip:' + t.id)]; }
+function swipeTargetOk(el){
+  if (el.closest('#genre-tabs, #sheet, #modal, input, textarea, select, button')) return false;
+  if (state.paint && el.closest('#cal-grid')) return false;   // 塗っている最中
+  return true;
+}
+$('view-cal').addEventListener('touchstart', (e) => {
+  swipe.ok = e.touches.length === 1 && swipeTargetOk(e.target);
+  if (!swipe.ok) return;
+  swipe.x = e.touches[0].clientX; swipe.y = e.touches[0].clientY; swipe.t = Date.now();
+}, { passive: true });
+$('view-cal').addEventListener('touchend', (e) => {
+  if (!swipe.ok || !e.changedTouches.length) return;
+  swipe.ok = false;
+  const dx = e.changedTouches[0].clientX - swipe.x, dy = e.changedTouches[0].clientY - swipe.y;
+  if (Date.now() - swipe.t > 800 || Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+  swipeGenre(dx < 0 ? 1 : -1);
+}, { passive: true });
+function swipeGenre(dir){
+  const order = genreOrder();
+  const i = order.indexOf(state.genre);
+  if (i < 0) return;
+  const next = order[i + dir];
+  if (!next) return;                       // 端では何もしない
+  setGenre(next);
+}
 
 function applyStrokeToCell(cell, ds){
   if (stroke.days.has(ds)) return;
