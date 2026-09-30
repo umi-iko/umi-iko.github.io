@@ -299,6 +299,10 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 .help-inner .hb li{margin-bottom:6px;}
 .help-inner .tip{background:#E4ECF6; color:#1F4E8C; border-radius:12px; padding:10px 14px; margin:8px 0; font-size:.98rem;}
 .help-inner .kw{display:inline-block; border:1.5px solid #1F4E8C; color:#1F4E8C; border-radius:8px; padding:0 8px; font-weight:700; white-space:nowrap;}
+.help-fig{margin:6px 0 14px; display:flex; gap:10px; justify-content:center;}
+.help-fig img{max-width:100%; width:260px; border-radius:12px; border:1px solid #D9CFB8; box-shadow:0 2px 8px rgba(31,78,140,.12); display:block; height:auto;}
+.help-fig.two img{width:calc(50% - 5px);}
+.help-svg{width:100%; max-width:340px; height:auto; display:block;}
 .help-inner .sw{display:inline-block; width:1em; height:1em; border-radius:50%; vertical-align:-2px; margin-right:4px;}
 </style>
 </head>
@@ -481,35 +485,55 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 <!-- ============ 使い方(ヘルプ) ============ -->
 <div id="help-screen" class="hidden">
   <div class="help-top">
-    <h1>📖 使い方</h1>
+    <h1>使い方</h1>
     <button class="help-close" onclick="closeHelp()">✕ 閉じる</button>
   </div>
   <div class="help-inner">
-    <p style="margin:0 0 14px">知りたいところを押すと開きます。もう一度押すと閉じます。</p>
+    <p style="margin:0 0 14px">見出しを押すと、その項目が開きます。</p>
 
     <details open>
       <summary><span class="no">1</span>このアプリでできること</summary>
       <div class="hb">
-        <p>「サーフィン行こ」は、仲間どうしで<b>「いつ海に行けるか」</b>を見せ合うカレンダーです。</p>
+        <p>「サーフィン行こ」は、仲間内で<b>「いつ海に行けるか」</b>を共有するためのカレンダーです。</p>
         <ul>
-          <li>自分が行ける日を、指でなぞって登録</li>
-          <li>仲間が行ける日が、点(●)で見える</li>
-          <li>海外や船のトリップの日程合わせ、参加者だけの掲示板</li>
-          <li>仲間が予定を入れたら、スマホに通知</li>
+          <li>自分が行ける日を、カレンダーを指でなぞって登録する</li>
+          <li>仲間が行ける日が、日付の中の点(●)で分かる</li>
+          <li>海外遠征やボートトリップの日程調整、参加者限定の掲示板</li>
+          <li>仲間が予定を入れたときなどに、スマートフォンへ通知</li>
         </ul>
-        <p class="tip">お金はかかりません。名前とPIN(6桁の数字)以外、個人情報は登録しません。</p>
+        <p class="tip">利用は無料です。登録するのは名前とPIN(6桁の数字)だけで、電話番号やメールアドレスは使いません。</p>
       </div>
     </details>
 
     <details>
-      <summary><span class="no">2</span>スマホのホーム画面に入れる(最初に1回)</summary>
+      <summary><span class="no">2</span>ホーム画面に追加する(初回のみ)</summary>
       <div class="hb">
-        <p>アプリのように使えて、通知も届くようになります。<b>iPhoneは、これをしないと通知が届きません。</b></p>
+        <p>ブラウザのブックマークではなく、ホーム画面のアイコンから開く形にしてください。アプリとして動作し、通知も受け取れるようになります。<b>iPhoneでは、この手順を済ませないと通知が届きません。</b></p>
+        <div class="help-fig">
+          <svg viewBox="0 0 320 120" class="help-svg" aria-hidden="true">
+            <rect x="8" y="8" width="90" height="104" rx="10" fill="#FFFCF5" stroke="#1F4E8C" stroke-width="2"/>
+            <text x="53" y="50" text-anchor="middle" font-size="9" fill="#1F4E8C">Safari / Chrome</text>
+            <rect x="34" y="70" width="38" height="28" rx="6" fill="#E4ECF6" stroke="#1F4E8C" stroke-width="2"/>
+            <path d="M53 90 V76 M47 82 l6-6 6 6" fill="none" stroke="#1F4E8C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="53" y="110" text-anchor="middle" font-size="9" fill="#1F4E8C">共有 / メニュー</text>
+            <path d="M104 60 h24" stroke="#1F4E8C" stroke-width="2.5" marker-end="url(#help-arrow)"/>
+            <rect x="134" y="8" width="90" height="104" rx="10" fill="#FFFCF5" stroke="#1F4E8C" stroke-width="2"/>
+            <rect x="142" y="52" width="74" height="22" rx="6" fill="#1F4E8C"/>
+            <text x="179" y="66" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">ホーム画面に追加</text>
+            <rect x="142" y="28" width="74" height="16" rx="4" fill="#F0E9D8"/><rect x="142" y="80" width="74" height="16" rx="4" fill="#F0E9D8"/>
+            <path d="M230 60 h24" stroke="#1F4E8C" stroke-width="2.5" marker-end="url(#help-arrow)"/>
+            <rect x="260" y="8" width="52" height="104" rx="10" fill="#FFFCF5" stroke="#1F4E8C" stroke-width="2"/>
+            <rect x="272" y="38" width="28" height="28" rx="7" fill="#1F4E8C"/>
+            <path d="M276 58 c4-6 8-6 12-2 s6 2 8-4" fill="none" stroke="#F5EEDF" stroke-width="2.5" stroke-linecap="round"/>
+            <text x="286" y="80" text-anchor="middle" font-size="6.5" fill="#1F4E8C">サーフィン行こ</text>
+            <defs><marker id="help-arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#1F4E8C"/></marker></defs>
+          </svg>
+        </div>
         <p><b>iPhone(Safari)</b></p>
         <ol>
           <li>Safariで <span class="kw">umi-iko.github.io</span> を開く</li>
-          <li>画面の下(または上)にある<b>「共有」ボタン</b>(□から↑が出ている形)を押す</li>
-          <li>下にスクロールして<b>「ホーム画面に追加」</b>を押す</li>
+          <li>画面下部(機種によっては上部)の<b>共有ボタン</b>(四角から矢印が上に出ているマーク)を押す</li>
+          <li>メニューを下にスクロールし、<b>「ホーム画面に追加」</b>を押す</li>
           <li>右上の<b>「追加」</b>を押す</li>
         </ol>
         <p><b>Android(Chrome)</b></p>
@@ -518,112 +542,118 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
           <li>右上の<b>「⋮」</b>を押す</li>
           <li><b>「ホーム画面に追加」</b>(または「アプリをインストール」)を押す</li>
         </ol>
-        <p>これからは、ホーム画面にできた青い切手のアイコンから開いてください。</p>
+        <p>以後は、ホーム画面に追加された青い切手のアイコンから起動してください。</p>
       </div>
     </details>
 
     <details>
-      <summary><span class="no">3</span>はじめての登録・ログイン</summary>
+      <summary><span class="no">3</span>登録とログイン</summary>
       <div class="hb">
-        <p><b>はじめての人</b></p>
+        <div class="help-fig two"><img src="help/01-login.png" alt="ログイン画面" loading="lazy"><img src="help/02-pin.png" alt="PIN入力画面" loading="lazy"></div>
+        <p><b>初回(まだ登録していない場合)</b></p>
         <ol>
-          <li>誘ってくれた人に<b>「招待コード」</b>を聞く</li>
+          <li>招待してくれた人から<b>招待コード</b>を受け取る</li>
           <li>ログイン画面の<b>「招待コードで新しく登録する」</b>を押す</li>
-          <li>招待コード、名前(ニックネームでOK)、PIN(自分で決めた6桁の数字)を入れて<b>「登録してはじめる」</b></li>
+          <li>招待コード、名前(ニックネーム可)、PIN(任意の6桁の数字)を入力し、<b>「登録してはじめる」</b>を押す</li>
         </ol>
-        <p><b>2回目から</b></p>
+        <p><b>2回目以降</b></p>
         <ol>
-          <li>名前を入れて<b>「次へ」</b></li>
-          <li>PINの6桁を押す(6つ入れると自動で入ります)</li>
+          <li>名前を入力して<b>「次へ」</b></li>
+          <li>PINの6桁を押す(6桁入力した時点で自動的にログインします)</li>
         </ol>
-        <p class="tip">一度ログインすると、次からは開くだけで入れます。PINを忘れたら、誘ってくれた人(管理者)に言えば新しいPINにしてもらえます。</p>
+        <p class="tip">一度ログインすれば、次回からは開くだけで使えます。PINを忘れた場合は、招待してくれた人(管理者)に再設定を依頼してください。</p>
       </div>
     </details>
 
     <details>
-      <summary><span class="no">4</span>行ける日を入れる(いちばん大事)</summary>
+      <summary><span class="no">4</span>行ける日を登録する</summary>
       <div class="hb">
+        <div class="help-fig"><img src="help/03-palette.png" alt="行き方のボタン" loading="lazy"></div>
         <ol>
-          <li>上の<b>「海」「プール」「海外」</b>から、どれかを押す</li>
-          <li>その下の丸いボタンから、気持ちを1つ押す
+          <li>画面上部のタブで<b>「海」「プール」「海外」</b>のいずれかを選ぶ</li>
+          <li>その下の丸いボタンから、自分の予定に合うものを1つ選ぶ
             <ul>
-              <li><b>行く</b> … 行くと決めている(いちばん濃い色)</li>
+              <li><b>行く</b> … 行くと決めている(最も濃い色)</li>
               <li><b>誰か行こう</b> … 誰か行くなら一緒に行きたい</li>
-              <li><b>ワンチャン</b> … 行けるかもしれない</li>
+              <li><b>ワンチャン</b> … 状況次第で行けるかもしれない</li>
             </ul>
           </li>
-          <li>カレンダーの日付を<b>指でなぞる</b>(1日だけなら押すだけ)。色がつけば登録完了</li>
+          <li>カレンダーの日付を<b>指でなぞる</b>(1日だけなら押すだけ)。色が付けば登録完了です</li>
         </ol>
-        <p><b>消したいとき</b> … 同じボタンのまま、もう一度なぞると消えます。<b>「🧽 消しゴム」</b>を選んでなぞってもOK。</p>
-        <p><b>メモを付けたいとき</b> … 色をつけた日を<b>長押し</b>(1秒くらい)すると、「朝一だけ」などのメモが書けます。</p>
+        <div class="help-fig"><img src="help/04-painted.png" alt="登録した後のカレンダー" loading="lazy"></div>
+        <p><b>取り消す</b> … 同じボタンを選んだまま、もう一度なぞると消えます。<b>「🧽 消しゴム」</b>を選んでなぞる方法でも構いません。</p>
+        <p><b>メモを付ける</b> … 色を付けた日を<b>長押し</b>(1秒程度)すると、「朝一のみ」「○○ポイント希望」などのメモを残せます。メモは日付を押したときに仲間にも表示されます。</p>
         <p class="tip">保存ボタンはありません。なぞった時点で保存されています。</p>
       </div>
     </details>
 
     <details>
-      <summary><span class="no">5</span>みんなの予定を見る</summary>
+      <summary><span class="no">5</span>仲間の予定を見る</summary>
       <div class="hb">
+        <div class="help-fig"><img src="help/05-daysheet.png" alt="日付を押したときの一覧" loading="lazy"></div>
         <ul>
-          <li>日付の中の<b>点(●)</b>が、その日に行ける仲間の人数です(1人=1つ)</li>
-          <li>行き方のボタンを何も選んでいない状態で<b>日付を押す</b>と、誰がどんな気持ちかが見られます</li>
-          <li>左右に<b>スワイプ</b>(指で横にはらう)すると、「海 → プール → 海外」と切り替わります</li>
-          <li>下の<b>「仲間」</b>を押すと、仲間の一覧。名前を押すとその人のカレンダーとプロフィールが見られます</li>
-          <li>名前に<b>赤い丸</b>が付いていたら、その人が新しく予定を入れたしるしです</li>
+          <li>日付の中の<b>点(●)</b>は、その日に予定を入れている仲間の人数です(1人につき1つ、10人を超えると「+n」)</li>
+          <li>行き方のボタンを選んでいない状態で<b>日付を押す</b>と、誰がどの予定を入れているかが一覧で表示されます</li>
+          <li>カレンダーを左右に<b>スワイプ</b>(指で横に払う)すると、「海 → プール → 海外」とタブが切り替わります</li>
+          <li>画面下の<b>「仲間」</b>を押すと仲間の一覧が開きます。名前を押すと、その人の予定とプロフィールが見られます</li>
+          <li>名前に<b>赤い丸</b>が付いている人は、前回見たあとに新しく予定を入れています</li>
         </ul>
       </div>
     </details>
 
     <details>
-      <summary><span class="no">6</span>誰に見せるか決める</summary>
+      <summary><span class="no">6</span>予定を見せる相手を選ぶ</summary>
       <div class="hb">
-        <p>自分の予定は、<b>自分が「見せる」にした人だけ</b>に見えます。誰にも見せていないと、誰にも見えません。</p>
+        <div class="help-fig"><img src="help/06-nakama.png" alt="仲間の一覧" loading="lazy"></div>
+        <p>自分の予定は、<b>自分が「見せる」にした相手だけ</b>に表示されます。初期状態では誰にも見せていません。</p>
         <ol>
-          <li>下の<b>「仲間」</b>を押す</li>
-          <li>見せたい人の<b>「見せる」のチェック</b>を押して入れる(もう一度押すとやめられます)</li>
+          <li>画面下の<b>「仲間」</b>を押す</li>
+          <li>見せたい人の<b>「見せる」</b>にチェックを入れる(外せば非表示に戻ります)。全員に見せる場合は右上の<b>「全員に見せる」</b></li>
         </ol>
-        <p class="tip">相手が自分に「見せる」にしてくれると、相手の予定が自分にも見えるようになります。</p>
+        <p>「表示」のチェックは、その人の予定を自分のカレンダーに重ねて表示するかどうかの設定です。相手が自分に「見せる」にしていない場合はチェックできません。</p>
       </div>
     </details>
 
     <details>
-      <summary><span class="no">7</span>トリップ(海外・遠征)の日程合わせ</summary>
+      <summary><span class="no">7</span>トリップの日程調整</summary>
       <div class="hb">
-        <p><b>トリップを作る(言い出しっぺ)</b></p>
+        <div class="help-fig two"><img src="help/07-trip-create.png" alt="トリップを作る画面" loading="lazy"><img src="help/08-trip-cal.png" alt="トリップの調整カレンダー" loading="lazy"></div>
+        <p><b>トリップを作る(発起人)</b></p>
         <ol>
-          <li>上のタブの右端<b>「＋追加」</b>を押す</li>
-          <li>名前(例: メンタワイ)と、候補の期間、誘う人を選んで作る</li>
+          <li>上部タブの右端<b>「＋追加」</b>を押す</li>
+          <li>名前(例: バリ 11月)を入力し、種類と参加者を選んで<b>「作る」</b></li>
         </ol>
-        <p><b>日程を合わせる(みんな)</b></p>
+        <p><b>日程を合わせる(参加者全員)</b></p>
         <ol>
-          <li>上のタブにトリップの名前が出るので押す</li>
-          <li>ふつうのカレンダーと同じように、行ける日をなぞる</li>
-          <li>全員の色が重なった日が、みんな行ける日</li>
+          <li>上部タブに追加されたトリップ名を押す</li>
+          <li>通常のカレンダーと同じ要領で、<b>行ける / 要調整 / 行けない</b>を選んで日付をなぞる</li>
+          <li>全員が「行ける」の日は、上の要約欄に★付きで表示されます</li>
         </ol>
-        <p><b>決まったら</b> … 作った人が<b>「日程を確定」</b>を押します。すると参加者だけの<b>トリップページ</b>ができて、しおり(集合場所・持ち物などのメモ)と掲示板が使えます。</p>
+        <p><b>日程が決まったら</b> … 発起人が<b>「日程を選んで確定する」</b>を押します。確定すると参加者限定の<b>トリップページ</b>が開けるようになり、しおり(集合場所・持ち物などのメモ。参加者なら誰でも編集可)と掲示板が使えます。</p>
       </div>
     </details>
 
     <details>
-      <summary><span class="no">8</span>ボートトリップの「募集」に答える</summary>
+      <summary><span class="no">8</span>ボートトリップの募集に回答する</summary>
       <div class="hb">
-        <p>船のトリップで席が余ったとき、<b>「📣 募集」</b>のタブが出ることがあります。</p>
+        <p>定員のあるボートトリップで空きが出た場合、声をかけられた人の上部タブに<b>「📣 (トリップ名)」</b>が表示されます。</p>
         <ol>
-          <li>そのタブを押すと、日程・料金などの案内が読めます</li>
-          <li><b>「行く」「前向きに検討」「様子見」「行けない」</b>のどれかを押す。あとで変えてもOK</li>
-          <li>締切のあと、主催者が参加者を決めます。決まると「確定」の連絡が来て、トリップページに入れます</li>
+          <li>そのタブを押すと、日程・案内文(料金や集合場所など)が確認できます</li>
+          <li><b>「行く」「前向きに検討」「様子見」「行けない」</b>のいずれかを押します。締切までは何度でも変更できます</li>
+          <li>締切後、主催者が参加者を決定します。参加が確定すると通知が届き、トリップページに入れるようになります</li>
         </ol>
-        <p class="tip">「行く」を押しても、席の数によってはキャンセル待ちになることがあります。</p>
+        <p class="tip">「行く」と回答しても、定員の関係でキャンセル待ちになる場合があります。</p>
       </div>
     </details>
 
     <details>
-      <summary><span class="no">9</span>行った記録(サーフィンした日数)</summary>
+      <summary><span class="no">9</span>サーフィンした日数の記録</summary>
       <div class="hb">
-        <p>「行く」にしていた日は、その日が過ぎると自動で<b>「行った」</b>として数えられます。</p>
+        <p>「行く」にしていた日は、日付が過ぎると自動的に<b>「行った」</b>として集計されます。</p>
         <ul>
-          <li>下の<b>「自分」</b>を押すと、今年・累計の日数が見られます</li>
-          <li><b>行かなかった日</b> … 「🧽 消しゴム」で過去の日をなぞると取り消し</li>
-          <li><b>予定に入れてなかったけど行った日</b> … <b>「✓ 行った」</b>を選んで過去の日をなぞる</li>
+          <li>画面下の<b>「自分」</b>に、今年と累計の日数が表示されます</li>
+          <li><b>実際には行かなかった日</b> … 「🧽 消しゴム」を選び、過去のその日をなぞると記録から外れます</li>
+          <li><b>予定に入れていなかったが行った日</b> … <b>「✓ 行った」</b>を選び、過去のその日をなぞると記録に加わります</li>
         </ul>
       </div>
     </details>
@@ -631,15 +661,16 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
     <details>
       <summary><span class="no">10</span>通知を受け取る</summary>
       <div class="hb">
-        <p>仲間が予定を入れたときなどに、スマホに知らせが届き、アイコンに数字が付きます。</p>
+        <div class="help-fig two"><img src="help/09-notify-off.png" alt="通知をオンにする前" loading="lazy"><img src="help/10-notify-on.png" alt="通知をオンにした後の設定" loading="lazy"></div>
+        <p>仲間が予定を入れたときや、トリップの連絡があったときに、スマートフォンに通知が届き、アイコンに件数が表示されます。</p>
         <ol>
-          <li><b>ホーム画面のアイコンから</b>アプリを開く(2番を参照。iPhoneはこれが必須)</li>
-          <li>下の<b>「自分」</b>→<b>「🔔 通知」</b>の<b>「この端末で通知をオンにする」</b>を押す</li>
-          <li>スマホが「通知を許可しますか?」と聞いてきたら<b>「許可」</b></li>
-          <li><b>「テスト通知を送る」</b>を押して、1分以内に届けばOK</li>
+          <li><b>ホーム画面のアイコンから</b>アプリを開く(項目2を参照。iPhoneでは必須です)</li>
+          <li>画面下の<b>「自分」</b>→<b>「🔔 通知」</b>の<b>「この端末で通知をオンにする」</b>を押す</li>
+          <li>「通知を許可しますか」と表示されたら<b>「許可」</b>を選ぶ</li>
+          <li><b>「テスト通知を送る」</b>を押し、1分以内に届くことを確認する</li>
         </ol>
-        <p><b>細かい設定</b> … 「控えめ」にすると音が鳴らず、通知が1件にまとまります。「どんな予定を知らせるか」(海だけ、「行く」だけ、この人だけ、など)も同じ画面で決められます。</p>
-        <p class="tip">届かないときは、スマホの「設定」→「通知」で、このアプリの通知が許可されているか見てください。</p>
+        <p><b>設定の調整</b> … 「控えめ」は音を鳴らさず通知を1件にまとめます。「しっかり」は毎回通知します。どの予定を通知するか(例: 海の「行く」だけ、特定の人だけ、何日先まで)は、同じ画面の「ルール」で細かく決められます。</p>
+        <p class="tip">届かない場合は、スマートフォンの「設定」→「通知」で、このアプリの通知が許可されているか確認してください。</p>
       </div>
     </details>
 
@@ -647,13 +678,13 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
       <summary><span class="no">11</span>困ったとき</summary>
       <div class="hb">
         <ul>
-          <li><b>PINを忘れた</b> … 誘ってくれた人(管理者)に言うと、新しいPINにしてもらえます</li>
-          <li><b>表示が古い・おかしい</b> … アプリを一度閉じて開き直してください</li>
-          <li><b>色がつかない</b> … 行き方のボタン(行く/誰か行こう/ワンチャン)を選んでいるか確認。何も選んでいないと「見るモード」です</li>
-          <li><b>仲間の予定が見えない</b> … 相手があなたに「見せる」にしていないと見えません。相手に頼んでください</li>
-          <li><b>間違えて登録した</b> … 同じボタンでもう一度なぞれば消えます。あわてなくて大丈夫</li>
+          <li><b>PINを忘れた</b> … 招待してくれた人(管理者)に再設定を依頼してください</li>
+          <li><b>表示が古い、動作がおかしい</b> … アプリを一度完全に閉じて、開き直してください</li>
+          <li><b>なぞっても色が付かない</b> … 行き方のボタン(行く / 誰か行こう / ワンチャン)が選ばれているか確認してください。未選択のときは閲覧モードです。過去の日付には予定を入れられません</li>
+          <li><b>仲間の予定が見えない</b> … 相手があなたに「見せる」の設定をしていないと表示されません</li>
+          <li><b>誤って登録した</b> … 同じボタンでもう一度なぞれば取り消せます</li>
         </ul>
-        <p>それでも分からないときは、誘ってくれた人に聞いてください。</p>
+        <p>解決しない場合は、招待してくれた人に相談してください。</p>
       </div>
     </details>
   </div>
