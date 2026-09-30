@@ -274,6 +274,22 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
 .check{width:26px; height:26px; accent-color:var(--accent); flex-shrink:0;}
 .toggle-col{display:flex; flex-direction:column; align-items:center; gap:2px; min-width:48px;}
 .toggle-col.disabled{opacity:.35;}
+/* 仲間一覧(コンパクト) */
+.nk-head{display:flex; align-items:center; gap:8px; padding:0 0 8px;}
+.nk-search{flex:1; min-width:0; display:flex; align-items:center; gap:6px; background:var(--bg); border-radius:10px; padding:0 10px; min-height:38px; color:var(--sub);}
+.nk-search input{flex:1; width:100%; min-width:0; border:none; background:transparent; font-size:.95rem; padding:8px 0; outline:none; color:var(--text);}
+.nk-search input::-webkit-search-cancel-button{-webkit-appearance:none;}
+.nk-all{color:var(--accent); background:var(--accent-weak); border-radius:10px; min-height:38px; padding:0 10px; font-size:.8rem; font-weight:700; white-space:nowrap;}
+.nk-cols{display:flex; align-items:center; gap:0; padding:0 4px 4px; border-bottom:1px solid var(--line); font-size:.7rem; color:var(--sub); font-weight:700;}
+.nk-cols span:not(.spacer){width:44px; text-align:center;}
+.member-row.compact{gap:0; padding:0 4px; min-height:44px;}
+.member-row.compact .member-name-btn{gap:8px; min-height:44px; min-width:0;}
+.member-row.compact .avatar{width:28px; height:28px; font-size:.8rem;}
+.member-row.compact .nk-name{display:flex; align-items:baseline; gap:8px; min-width:0; font-size:.95rem;}
+.member-row.compact .nk-name b{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.member-row.compact .nk-last{font-size:.7rem; white-space:nowrap;}
+.member-row.compact .toggle-col{min-width:44px; width:44px; min-height:44px; justify-content:center;}
+.member-row.compact .check{width:22px; height:22px;}
 .mylist-day{display:flex; align-items:center; gap:8px; padding:8px 2px; border-bottom:1px solid var(--line); font-size:.92rem;}
 .mylist-day:last-child{border-bottom:none;}
 .intent-tag{color:#fff; font-size:.72rem; font-weight:700; border-radius:6px; padding:3px 8px; white-space:nowrap;}
@@ -355,6 +371,7 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
   <symbol id="i-memo" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M13 7l3 3"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
   <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 015 0c0 1.5-2.5 2-2.5 4M12 17h.01"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></symbol>
   <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.5-4.5 4-7 7.5-7s7 2.5 7.5 7"/></symbol>
 </svg>
 <div id="spinner"><div class="spin"></div></div>
@@ -2755,38 +2772,59 @@ async function renderNakama(){
     return;
   }
   const allShared = others.every(m => state.sharesTo.has(m.id));
+  const q = ($('nakama-search') && $('nakama-search').value) || '';
   $('nakama-list').innerHTML = `
-    <div class="row" style="padding:4px 4px 10px; border-bottom:1px solid var(--line)">
-      <span class="sub" style="flex:1">見せる=自分の予定を見せる相手<br>見たい=その人の予定をカレンダーに重ねる</span>
-      <button class="btn secondary" style="width:auto; min-height:40px; padding:0 12px; font-size:.85rem"
-        onclick="shareAll(${allShared ? 'false' : 'true'})">${allShared ? '全員に見せるのをやめる' : '全員に見せる'}</button>
-    </div>` + others.map(m => {
+    <div class="nk-head">
+      <div class="nk-search"><svg class="ic" style="width:16px;height:16px;stroke-width:2.2"><use href="#i-search"/></svg>
+        <input id="nakama-search" type="search" placeholder="名前で検索" value="${esc(q)}" autocomplete="off" autocorrect="off" oninput="filterNakama(this.value)"></div>
+      <button class="nk-all" onclick="shareAll(${allShared ? 'false' : 'true'})">${allShared ? '全員に見せない' : '全員に見せる'}</button>
+      <button class="mini-help" onclick="toggleEl('nk-note')" aria-label="説明">?</button>
+    </div>
+    <div id="nk-note" class="sub hidden" style="font-size:.78rem; padding:0 4px 8px">見せる = 自分の予定をその人に見せる<br>見たい = その人の予定を自分のカレンダーに重ねる(相手が見せてくれている人だけ)</div>
+    <div class="nk-cols"><span class="spacer"></span><span>見せる</span><span>見たい</span></div>
+    <div id="nakama-rows">` + others.map(m => {
     const see = canSee(m.id);
     const dot = hasRedDot(m) ? '<span class="reddot-inline"></span>' : '';
-    const last = !see ? '予定は非公開'
+    const last = !see ? '非公開'
       : m.last_activity_at
-        ? `最終更新 ${new Date(m.last_activity_at).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})}`
-        : 'まだ予定なし';
-    return `<div class="member-row">
+        ? `${new Date(m.last_activity_at).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})} 更新`
+        : '予定なし';
+    return `<div class="member-row compact" data-search="${esc(searchKey(m))}">
       <button class="member-name-btn" onclick="openProfile('${m.id}')">
         <span class="avatar" style="background:${memberColor(m.id)}">${esc(m.name[0])}</span>
-        <span><b>${esc(memberName(m.id))}</b>${dot}<br><span class="sub">${last}</span></span>
+        <span class="nk-name"><b>${esc(memberName(m.id))}</b>${dot}<span class="sub nk-last">${last}</span></span>
       </button>
       <label class="toggle-col">
         <input type="checkbox" class="check" ${state.sharesTo.has(m.id) ? 'checked' : ''}
-          onchange="toggleShare('${m.id}', this.checked)">
-        <span class="sub">見せる</span>
+          onchange="toggleShare('${m.id}', this.checked)" aria-label="見せる">
       </label>
       <label class="toggle-col ${see ? '' : 'disabled'}">
         <input type="checkbox" class="check" ${see && state.follows.has(m.id) ? 'checked' : ''} ${see ? '' : 'disabled'}
-          onchange="toggleFollow('${m.id}', this.checked)">
-        <span class="sub">見たい</span>
+          onchange="toggleFollow('${m.id}', this.checked)" aria-label="見たい">
       </label>
     </div>`;
-  }).join('');
+  }).join('') + `</div><p class="sub nk-empty hidden" style="padding:12px 4px">該当する名前がありません</p>`;
+  if (q) filterNakama(q);
 
   // この画面を見た=既読。赤丸を消す(表示上は次回から消える)
   await markAllSeen();
+}
+
+/* 名前検索(登録名・メモ名。カタカナ/ひらがな・大文字小文字・全角半角の違いは無視) */
+function normKana(t){
+  return String(t || '').toLowerCase().normalize('NFKC')
+    .replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+}
+function searchKey(m){ return normKana(m.name + ' ' + (state.aliases[m.id] || '')); }
+function filterNakama(q){
+  const key = normKana(q.trim());
+  let shown = 0;
+  document.querySelectorAll('#nakama-rows .member-row').forEach(r => {
+    const hit = !key || r.dataset.search.includes(key);
+    r.classList.toggle('hidden', !hit); if (hit) shown++;
+  });
+  const empty = document.querySelector('#nakama-list .nk-empty');
+  if (empty) empty.classList.toggle('hidden', shown > 0);
 }
 
 async function markAllSeen(){
