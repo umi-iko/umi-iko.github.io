@@ -33,3 +33,14 @@ jobs:
             echo "Ping failed with status $STATUS"
             exit 1
           fi
+
+      # 日付が過ぎた「行く」・確定トリップを「行った日」の記録に確定する
+      # (アプリを誰も開かない期間があっても記録がたまるように。失敗してもpingは成功扱い)
+      - name: Snapshot surf log
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/rpc/snapshot_surf_log" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" -d '{}')
+          echo "snapshot HTTP status: $STATUS"

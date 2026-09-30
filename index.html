@@ -127,6 +127,26 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 .day.all-free::after{content:'★'; position:absolute; top:1px; left:3px; font-size:.62rem; color:#F2B01E; z-index:1;}
 .day.all-ok{box-shadow:inset 0 0 0 2px #C9B8F0;}
 .day.all-ok::after{content:'☆'; position:absolute; top:1px; left:3px; font-size:.62rem; color:#8E74D6; z-index:1;}
+/* 確定したトリップの日 */
+.day.trip-confirmed{box-shadow:inset 0 0 0 3px #6E4FBF;}
+.day.trip-confirmed::after{content:'✈'; position:absolute; top:1px; left:3px; font-size:.62rem; color:#6E4FBF; z-index:1;}
+#trip-summary .t-range.pick{cursor:pointer; text-decoration:underline dotted;}
+#trip-summary .t-confirmed{display:inline-block; background:#6E4FBF; color:#fff; border-radius:8px; padding:3px 10px; font-weight:700; margin-top:4px;}
+.badge{display:inline-block; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--danger);
+  color:#fff; font-size:.7rem; font-weight:700; line-height:18px; text-align:center; margin-left:4px;}
+.tab-dot{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--danger); margin-left:4px; vertical-align:top;}
+/* トリップページ */
+.notes-body{white-space:pre-wrap; word-break:break-word; line-height:1.6; font-size:.95rem;}
+.post{display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);}
+.post:last-child{border-bottom:none;}
+.post .body{white-space:pre-wrap; word-break:break-word; margin-top:3px; line-height:1.5;}
+.post.mine .body{color:#3A2A6E;}
+#post-input{resize:vertical; min-height:70px;}
+/* サーフィン記録 */
+.stat-big{font-size:2.2rem; font-weight:800; line-height:1.1;}
+.stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px; text-align:center;}
+.stat-grid div{background:var(--bg); border-radius:10px; padding:8px 2px;}
+.stat-grid b{display:block; font-size:1.15rem;}
 .trip-member-row{display:flex; align-items:center; gap:10px; min-height:48px; border-bottom:1px solid var(--line);}
 .trip-member-row:last-child{border-bottom:none;}
 
@@ -292,6 +312,24 @@ h2{font-size:1.05rem; margin:0 0 10px;}
       トリップの調整帳は、参加者どうしで見えます(この設定とは別です)。</p>
   </div>
 
+  <!-- トリップページ(確定したトリップの参加者用) -->
+  <div id="view-trip" class="screen hidden">
+    <button style="color:#6E4FBF; font-weight:600; min-height:44px" onclick="closeTripPage()">← カレンダーへ</button>
+    <div id="trip-page-head"></div>
+    <div class="card">
+      <div class="row"><h2 style="margin:0">📋 旅のしおり</h2><div class="spacer"></div>
+        <button class="t-btn" id="notes-edit-btn" style="color:#6E4FBF; font-weight:600; min-height:40px" onclick="editTripNotes()">編集</button></div>
+      <div id="trip-notes" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <div class="row"><h2 style="margin:0">💬 掲示板</h2><div class="spacer"></div>
+        <button style="color:#6E4FBF; font-weight:600; min-height:40px" onclick="loadTripPosts(true)">↻ 更新</button></div>
+      <div id="trip-posts" style="margin-top:6px"></div>
+      <textarea class="field" id="post-input" maxlength="1000" placeholder="参加者に書き込む(例: 空港に7時集合でOK?)" style="margin-top:10px"></textarea>
+      <button class="btn" style="margin-top:8px; background:#6E4FBF" onclick="submitPost()">書き込む</button>
+    </div>
+  </div>
+
   <!-- 仲間の詳細 -->
   <div id="view-member-detail" class="screen hidden">
     <button style="color:var(--accent); font-weight:600; min-height:44px" onclick="showTab('nakama')">← 仲間一覧へ</button>
@@ -307,6 +345,10 @@ h2{font-size:1.05rem; margin:0 0 10px;}
         <span class="sub" id="my-role"></span></div>
       <button class="btn secondary" style="margin-top:14px" onclick="openPinChange('normal')">PINを変える</button>
       <button class="btn secondary" style="margin-top:10px" onclick="confirmLogout()">ログアウト</button>
+    </div>
+    <div class="card" id="surf-record">
+      <h2>🏄 サーフィン記録</h2>
+      <div id="surf-stats"><p class="sub">読み込み中…</p></div>
     </div>
     <div class="card">
       <h2>じぶんの予定</h2>
@@ -331,7 +373,7 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 
   <!-- タブバー -->
   <div id="tabbar">
-    <button id="tab-cal" onclick="showTab('cal')"><span class="ticon">📅</span>カレンダー</button>
+    <button id="tab-cal" onclick="showTab('cal')"><span class="ticon">📅</span>カレンダー<span id="cal-dot" class="reddot hidden"></span></button>
     <button id="tab-nakama" onclick="showTab('nakama')"><span class="ticon">🏄</span>仲間<span id="nakama-dot" class="reddot hidden"></span></button>
     <button id="tab-jibun" onclick="showTab('jibun')"><span class="ticon">👤</span>じぶん</button>
   </div>
@@ -448,6 +490,9 @@ const state = {
   monthRows: [],            // 表示月の availability 全行(全ジャンル)
   trips: [],                // 自分が参加しているトリップ [{id,name,created_by,members:[id]}]
   tripRows: [],             // 表示中トリップの回答 全行(全期間)
+  tripUnread: {},           // trip_id -> 掲示板の未読数
+  tripPageId: null,         // 開いているトリップページ
+  tripPosts: [],
   members: [],              // 全メンバー
   follows: new Set(),       // カレンダーに表示する人のID
   sharesTo: new Set(),      // 自分の予定を見せている相手
@@ -686,6 +731,8 @@ async function skipPinPrompt(){
 /* ---------- アプリへ ---------- */
 async function enterApp(me){
   state.me = me;
+  // 日付が過ぎた「行く」・確定トリップを記録に確定(結果は待たない)
+  sb.rpc('snapshot_surf_log').then(() => {}, () => {});
   $('login-screen').classList.add('hidden');
   $('app').classList.remove('hidden');
   const now = new Date();
@@ -730,7 +777,7 @@ async function refreshSocial(){
     sb.from('members').select('id,name,is_admin').order('name'),
     sb.from('follows').select('followee_id'),
     sb.from('last_seen').select('followee_id,seen_at'),
-    sb.from('trips').select('id,name,created_by,created_at').order('created_at'),
+    sb.from('trips').select('id,name,created_by,created_at,confirmed_start,confirmed_end,notes,notes_updated_at,notes_updated_by').order('created_at'),
     sb.from('trip_members').select('trip_id,member_id'),
     sb.from('shares').select('owner_id,viewer_id'),
     sb.rpc('visible_activity'),
@@ -747,6 +794,7 @@ async function refreshSocial(){
   (seen || []).forEach(r => { state.lastSeen[r.followee_id] = r.seen_at; });
   state.trips = (trips || []).map(t => ({
     ...t, members: (tms || []).filter(m => m.trip_id === t.id).map(m => m.member_id) }));
+  await loadTripUnread();
   // 表示中のトリップから外された/消された場合は海に戻す
   if (isTrip(state.genre) && !currentTrip()) { state.genre = 'sea'; state.paint = null; setAccent(); }
 }
@@ -810,7 +858,8 @@ function renderGenreTabs(){
     `<button class="${g === state.genre ? 'active' : ''}" onclick="setGenre('${g}')">${INTENTS[g].label}</button>`);
   const trips = state.trips.map(t =>
     `<button class="trip-tab ${state.genre === 'trip:' + t.id ? 'active' : ''}"
-       onclick="setGenre('trip:${t.id}')">✈️ ${esc(t.name)}</button>`);
+       onclick="setGenre('trip:${t.id}')">${t.confirmed_start ? '✅' : '✈️'} ${esc(t.name)}${
+       state.tripUnread[t.id] ? '<span class="tab-dot"></span>' : ''}</button>`);
   const add = `<button class="trip-add" title="トリップを作る" onclick="openTripCreate()">＋</button>`;
   $('genre-tabs').innerHTML = [...base, ...trips, add].join('');
   const act = $('genre-tabs').querySelector('.active');
@@ -881,11 +930,23 @@ function renderTripSummary(trip, st){
   const box = $('trip-summary');
   if (!trip) { box.classList.add('hidden'); return; }
   const owner = memberName(trip.created_by);
+  const isCreator = trip.created_by === state.me.id;
+  // 作った人は、候補の日程をタップして確定できる
+  const pick = (r) => isCreator && !trip.confirmed_start ? ` pick" onclick="openConfirmTrip('${r[0]}','${r[1]}')` : '';
   const free = st.freeRanges.length
-    ? st.freeRanges.map(r => `<span class="t-range">★ ${rangeLabel(r)}</span>`).join('')
+    ? st.freeRanges.map(r => `<span class="t-range${pick(r)}">★ ${rangeLabel(r)}</span>`).join('')
     : '<span class="sub">まだありません</span>';
   const ok = st.okRanges.length
-    ? st.okRanges.map(r => `<span class="t-range ok">☆ ${rangeLabel(r)}</span>`).join('') : '';
+    ? st.okRanges.map(r => `<span class="t-range ok${pick(r)}">☆ ${rangeLabel(r)}</span>`).join('') : '';
+  const unread = state.tripUnread[trip.id] || 0;
+  const confirmedBlock = trip.confirmed_start ? `
+    <div class="t-line"><span class="t-confirmed">✅ 確定 ${rangeLabel([trip.confirmed_start, trip.confirmed_end])}</span></div>
+    <button class="btn" style="margin-top:10px; background:#6E4FBF" onclick="openTripPage('${trip.id}')">
+      📋 トリップページ(しおり・掲示板)${unread ? `<span class="badge">${unread}</span>` : ''}</button>
+    ${isCreator ? `<button class="t-btn" style="margin-top:4px" onclick="confirmUnconfirmTrip('${trip.id}')">確定を取り消す</button>` : ''}`
+    : (isCreator ? `
+    <div class="t-line sub">★☆の日程をタップすると、その日程で確定できます</div>
+    <button class="t-btn" onclick="openConfirmTrip('', '')">日程を選んで確定する</button>` : '');
   const un = st.unanswered.length
     ? `<div class="t-line sub">未回答: ${st.unanswered.map(memberName).map(esc).join('、')}</div>` : '';
   box.innerHTML = `
@@ -895,6 +956,7 @@ function renderTripSummary(trip, st){
       <div class="spacer"></div>
       <button class="t-btn" onclick="openTripSettings('${trip.id}')">参加者・設定</button>
     </div>
+    ${confirmedBlock}
     <div class="t-line"><b>全員が空いてる日</b><br>${free}</div>
     ${ok ? `<div class="t-line"><span class="sub">調整すれば全員OK</span><br>${ok}</div>` : ''}
     ${un}
@@ -933,7 +995,8 @@ function renderCalendar(){
       style = `background:${idef.color}`;
     }
     if (st) {
-      if (st.allFree.has(ds)) cls.push('all-free');
+      if (trip.confirmed_start && ds >= trip.confirmed_start && ds <= trip.confirmed_end) cls.push('trip-confirmed');
+      else if (st.allFree.has(ds)) cls.push('all-free');
       else if (st.allOk.has(ds)) cls.push('all-ok');
     }
     // 仲間の予定は人数分の色点で表示(10人まで。超えたら +n)
@@ -1330,10 +1393,226 @@ async function showTab(tab){
     $(`tab-${t}`).classList.toggle('active', t === tab);
   }
   $('view-member-detail').classList.add('hidden');
+  $('view-trip').classList.add('hidden');
+  stopPostPolling();
+  hideBulkMemoBar();
   if (tab === 'nakama') await renderNakama();
   if (tab === 'jibun') await renderJibun();
   if (tab === 'cal') { await refreshSocial(); renderGenreTabs(); await loadMonth(); renderCalendar(); updateNakamaBadge(); }
   window.scrollTo(0, 0);
+}
+
+/* =====================================================================
+   トリップの確定・トリップページ(しおり・掲示板)
+===================================================================== */
+async function loadTripUnread(){
+  const { data } = await sb.rpc('trip_unread');
+  state.tripUnread = {};
+  (data || []).forEach(r => { if (r.unread > 0) state.tripUnread[r.trip_id] = r.unread; });
+  updateTripBadges();
+}
+function updateTripBadges(){
+  const any = Object.values(state.tripUnread).some(n => n > 0);
+  $('cal-dot').classList.toggle('hidden', !any);
+}
+
+function openConfirmTrip(start, end){
+  const trip = currentTrip();
+  if (!trip) return;
+  openModal(`
+    <h2>「${esc(trip.name)}」の日程を確定</h2>
+    <p class="sub">確定すると、参加者用のトリップページ(しおり・掲示板)が使えるようになります。確定した日は、日付が過ぎると「行った日」として記録されます。</p>
+    <label class="sub">はじまり</label>
+    <input class="field" type="date" id="cf-start" value="${start}" style="margin:4px 0 10px">
+    <label class="sub">おわり</label>
+    <input class="field" type="date" id="cf-end" value="${end || start}" style="margin:4px 0">
+    <p class="pin-error" id="cf-error"></p>
+    <button class="btn" style="background:#6E4FBF" onclick="submitConfirmTrip('${trip.id}')">この日程で確定</button>
+    <button class="btn secondary" onclick="closeModal()">やめる</button>
+  `);
+}
+async function submitConfirmTrip(id){
+  const a = $('cf-start').value, b = $('cf-end').value;
+  if (!a || !b) { $('cf-error').textContent = '日付を選んでください'; return; }
+  if (b < a) { $('cf-error').textContent = 'おわりは、はじまりより後にしてください'; return; }
+  spin(true);
+  const { error } = await sb.rpc('confirm_trip', { p_trip: id, p_start: a, p_end: b });
+  spin(false);
+  if (error) { $('cf-error').textContent = (error.message || '').includes('60日') ? '60日以内の日程にしてください' : '確定できませんでした'; return; }
+  closeModal();
+  toast('日程を確定しました!');
+  await refreshSocial(); renderGenreTabs(); renderCalendar();
+}
+function confirmUnconfirmTrip(id){
+  openModal(`
+    <h2>確定を取り消しますか?</h2>
+    <p class="sub">日程調整に戻ります。しおりと掲示板の内容は消えません。</p>
+    <button class="btn danger-outline" onclick="doUnconfirmTrip('${id}')">取り消す</button>
+    <button class="btn secondary" onclick="closeModal()">やめる</button>
+  `);
+}
+async function doUnconfirmTrip(id){
+  closeModal(); spin(true);
+  const { error } = await sb.rpc('unconfirm_trip', { p_trip: id });
+  spin(false);
+  if (error) { toast('取り消せませんでした', true); return; }
+  toast('確定を取り消しました');
+  await refreshSocial(); renderGenreTabs(); renderCalendar();
+}
+
+/* ---------- トリップページ ---------- */
+async function openTripPage(id){
+  state.tripPageId = id;
+  hideBulkMemoBar();
+  $('view-cal').classList.add('hidden');
+  $('view-trip').classList.remove('hidden');
+  renderTripPageHead();
+  renderTripNotes();
+  $('trip-posts').innerHTML = '<p class="sub">読み込み中…</p>';
+  window.scrollTo(0, 0);
+  await loadTripPosts(false);
+  startPostPolling();
+}
+function closeTripPage(){
+  stopPostPolling();
+  state.tripPageId = null;
+  $('view-trip').classList.add('hidden');
+  $('view-cal').classList.remove('hidden');
+  renderGenreTabs(); renderCalendar();
+}
+function tripOfPage(){ return tripById(state.tripPageId); }
+function renderTripPageHead(){
+  const t = tripOfPage(); if (!t) return;
+  $('trip-page-head').innerHTML = `
+    <h1 style="margin-bottom:4px">✈️ ${esc(t.name)}</h1>
+    <div><span class="t-confirmed" style="display:inline-block; background:#6E4FBF; color:#fff; border-radius:8px; padding:3px 10px; font-weight:700">
+      ✅ ${rangeLabel([t.confirmed_start, t.confirmed_end])}</span></div>
+    <div style="display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 14px">
+      ${t.members.map(id => `<span class="row" style="gap:4px; background:#fff; border-radius:16px; padding:3px 10px 3px 3px; font-size:.85rem">
+        <span class="avatar" style="background:${memberColor(id)}; width:24px; height:24px; font-size:.7rem">${esc(memberName(id)[0])}</span>${esc(memberName(id))}</span>`).join('')}
+    </div>`;
+}
+function renderTripNotes(){
+  const t = tripOfPage(); if (!t) return;
+  $('notes-edit-btn').classList.remove('hidden');
+  const by = t.notes_updated_by ? memberName(t.notes_updated_by) : null;
+  $('trip-notes').innerHTML = t.notes
+    ? `<div class="notes-body">${esc(t.notes)}</div>
+       <div class="sub" style="margin-top:8px; font-size:.75rem">最終更新: ${by ? esc(by) + ' ・ ' : ''}${fmtDateTime(t.notes_updated_at)}</div>`
+    : `<p class="sub">まだ何も書かれていません。集合場所・宿・持ち物などを参加者みんなで書き込めます。</p>`;
+}
+function editTripNotes(){
+  const t = tripOfPage(); if (!t) return;
+  $('notes-edit-btn').classList.add('hidden');
+  $('trip-notes').innerHTML = `
+    <textarea class="field" id="notes-input" rows="8" maxlength="3000"
+      placeholder="例)\n集合: 成田空港 第2ターミナル 7:00\n宿: ○○ヴィラ(3泊)\n持ち物: ボード、ウェット、日焼け止め">${esc(t.notes || '')}</textarea>
+    <button class="btn" style="margin-top:8px; background:#6E4FBF" onclick="saveTripNotes()">保存する</button>
+    <button class="btn secondary" style="margin-top:8px" onclick="renderTripNotes()">やめる</button>`;
+  $('notes-input').focus();
+}
+async function saveTripNotes(){
+  const text = $('notes-input').value;
+  spin(true);
+  const { error } = await sb.rpc('update_trip_notes', { p_trip: state.tripPageId, p_notes: text });
+  spin(false);
+  if (error) { toast('保存できませんでした', true); return; }
+  toast('しおりを保存しました');
+  await refreshSocial();
+  renderTripNotes();
+}
+
+function fmtDateTime(iso){
+  if (!iso) return '';
+  const d = new Date(iso);
+  return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+async function loadTripPosts(showToast){
+  const id = state.tripPageId; if (!id) return;
+  const { data, error } = await sb.from('trip_posts')
+    .select('id,member_id,body,created_at').eq('trip_id', id).order('created_at');
+  if (state.tripPageId !== id) return;
+  if (error) { $('trip-posts').innerHTML = '<p class="sub">読み込めませんでした</p>'; return; }
+  const before = state.tripPosts.length;
+  state.tripPosts = data || [];
+  renderTripPosts();
+  // 見た = 既読
+  await sb.from('trip_post_seen').upsert(
+    { trip_id: id, member_id: state.me.id, seen_at: new Date().toISOString() },
+    { onConflict: 'trip_id,member_id' });
+  delete state.tripUnread[id];
+  updateTripBadges();
+  if (showToast) toast(state.tripPosts.length > before ? '新しい書き込みがあります' : '最新です');
+}
+function renderTripPosts(){
+  const t = tripOfPage(); if (!t) return;
+  const canModerate = t.created_by === state.me.id || state.me.is_admin;
+  $('trip-posts').innerHTML = state.tripPosts.length ? state.tripPosts.map(p => {
+    const mine = p.member_id === state.me.id;
+    return `<div class="post ${mine ? 'mine' : ''}">
+      <span class="avatar" style="background:${memberColor(p.member_id)}; width:32px; height:32px; font-size:.85rem">${esc(memberName(p.member_id)[0])}</span>
+      <div style="flex:1; min-width:0">
+        <div class="row" style="gap:6px"><b style="font-size:.9rem">${esc(memberName(p.member_id))}</b>
+          <span class="sub" style="font-size:.75rem">${fmtDateTime(p.created_at)}</span>
+          <div class="spacer"></div>
+          ${mine || canModerate ? `<button class="sub" style="min-height:32px; min-width:32px" onclick="deletePost('${p.id}')">🗑</button>` : ''}</div>
+        <div class="body">${esc(p.body)}</div>
+      </div></div>`;
+  }).join('') : '<p class="sub">まだ書き込みはありません。最初のひとことをどうぞ!</p>';
+}
+async function submitPost(){
+  const body = $('post-input').value.trim();
+  if (!body) { toast('書き込む内容を入れてください', true); return; }
+  spin(true);
+  const { error } = await sb.from('trip_posts').insert({ trip_id: state.tripPageId, member_id: state.me.id, body });
+  spin(false);
+  if (error) { toast('書き込めませんでした', true); return; }
+  $('post-input').value = '';
+  await loadTripPosts(false);
+  const box = $('trip-posts'); box.lastElementChild && box.lastElementChild.scrollIntoView({ block: 'nearest' });
+}
+function deletePost(id){
+  openModal(`
+    <h2>この書き込みを削除しますか?</h2>
+    <button class="btn danger-outline" onclick="doDeletePost('${id}')">削除する</button>
+    <button class="btn secondary" onclick="closeModal()">やめる</button>`);
+}
+async function doDeletePost(id){
+  closeModal();
+  const { error } = await sb.from('trip_posts').delete().eq('id', id);
+  if (error) { toast('削除できませんでした', true); return; }
+  await loadTripPosts(false);
+}
+let postTimer = null;
+function startPostPolling(){
+  stopPostPolling();
+  postTimer = setInterval(() => { if (!document.hidden) loadTripPosts(false); }, 20000);
+}
+function stopPostPolling(){ if (postTimer) { clearInterval(postTimer); postTimer = null; } }
+
+/* =====================================================================
+   サーフィン記録(じぶんタブ)
+===================================================================== */
+async function renderSurfStats(){
+  await sb.rpc('snapshot_surf_log');
+  const { data, error } = await sb.rpc('my_surf_stats');
+  const box = $('surf-stats');
+  if (error || !data) { box.innerHTML = '<p class="sub">読み込めませんでした</p>'; return; }
+  const y = new Date().getFullYear();
+  box.innerHTML = `
+    <div class="row" style="align-items:flex-end; gap:14px">
+      <div><div class="sub">これまで</div><div class="stat-big">${data.total}<span style="font-size:1rem; font-weight:600"> 日</span></div></div>
+      <div><div class="sub">${y}年</div><div class="stat-big" style="font-size:1.6rem">${data.this_year}<span style="font-size:.9rem; font-weight:600"> 日</span></div></div>
+    </div>
+    <div class="stat-grid">
+      <div><span class="sub">海</span><b>${data.sea}</b></div>
+      <div><span class="sub">プール</span><b>${data.pool}</b></div>
+      <div><span class="sub">海外</span><b>${data.abroad}</b></div>
+      <div><span class="sub">トリップ</span><b>${data.trip}</b></div>
+    </div>
+    <p class="sub" style="margin-top:10px; font-size:.78rem">
+      「行く」で塗った日と、確定したトリップの日が、日付が過ぎると自動で記録されます(同じ日は1日として数えます)。
+      ${data.last_date ? `<br>最後に行った日: ${fmtDate(data.last_date)}` : ''}</p>`;
 }
 
 /* =====================================================================
@@ -1496,6 +1775,7 @@ async function openMemberDetail(id){
    じぶんタブ
 ===================================================================== */
 async function renderJibun(){
+  renderSurfStats();
   $('my-name').textContent = state.me.name;
   $('my-role').textContent = state.me.is_admin ? '管理者' : '';
   spin(true);
