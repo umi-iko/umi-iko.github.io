@@ -1,63 +1,112 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><defs>
-    <!-- 波(1024x1024 座標系。海面 y≈770、リップ右上) -->
-    <g id="wave">
-      <!-- 海の本体(左は斜面、右は頂上からストンと落ちて海面へ) -->
-      <path fill="#1F4E8C" d="M -20 790 C 90 780, 180 760, 250 700 C 330 632, 380 520, 450 440 C 530 350, 640 320, 740 335 C 850 352, 920 420, 940 520 C 958 610, 985 690, 1044 720 L 1044 1044 L -20 1044 Z"/>
-      <!-- 頂上の泡のふくらみ -->
-      <g fill="#1F4E8C">
-        <circle cx="470" cy="450" r="30"/><circle cx="540" cy="392" r="34"/><circle cx="620" cy="350" r="36"/>
-        <circle cx="710" cy="328" r="38"/><circle cx="800" cy="342" r="34"/><circle cx="880" cy="392" r="30"/>
-        <circle cx="300" cy="660" r="26"/><circle cx="200" cy="742" r="22"/>
-      </g>
-      <!-- チューブ(空洞) -->
-      <circle cx="760" cy="590" r="150" fill="#F5EEDF"/>
-      <!-- リップの巻き(太→細のストローク) -->
-      <g fill="none" stroke="#1F4E8C" stroke-linecap="round">
-        <path stroke-width="82" d="M 640 372 C 760 330, 880 380, 900 490"/>
-        <path stroke-width="62" d="M 900 490 C 918 580, 860 640, 790 630"/>
-        <path stroke-width="42" d="M 790 630 C 735 622, 720 565, 762 540"/>
-        <path stroke-width="26" d="M 762 540 C 790 525, 812 545, 800 570"/>
-      </g>
-      <!-- 泡(クリーム) -->
-      <g fill="#F5EEDF">
-        <circle cx="560" cy="440" r="16"/><circle cx="500" cy="500" r="13"/><circle cx="440" cy="590" r="12"/>
-        <circle cx="660" cy="400" r="12"/><circle cx="360" cy="690" r="14"/><circle cx="960" cy="740" r="12"/>
-        <circle cx="120" cy="820" r="14"/><circle cx="600" cy="800" r="12"/>
-      </g>
-      <!-- しぶき(ネイビー、リップの上) -->
-      <g fill="#1F4E8C">
-        <circle cx="560" cy="330" r="14"/><circle cx="640" cy="286" r="12"/><circle cx="730" cy="270" r="15"/>
-        <circle cx="820" cy="292" r="11"/><circle cx="900" cy="330" r="13"/><circle cx="500" cy="380" r="9"/>
-      </g>
-      <!-- 手前の小波 -->
-      <g fill="none" stroke="#F5EEDF" stroke-width="18" stroke-linecap="round">
-        <path d="M 60 900 C 110 870, 160 870, 210 900 C 260 930, 310 930, 360 900"/>
-        <path d="M 640 920 C 690 890, 740 890, 790 920 C 840 950, 890 950, 940 920"/>
-      </g>
-    </g>
-    <!-- ヤシの木(左上向き) -->
-    <g id="palm" fill="#1F4E8C">
-      <path d="M232 720 C 224 610, 236 470, 292 372 L 332 380 C 284 480, 280 610, 292 720 Z"/>
-      <path d="M318 364 C 240 296, 136 300, 76 352 C 150 340, 232 360, 296 396 Z"/>
-      <path d="M318 364 C 292 268, 220 210, 136 208 C 210 236, 274 296, 300 380 Z"/>
-      <path d="M318 364 C 330 258, 402 190, 494 184 C 420 218, 366 292, 342 380 Z"/>
-      <path d="M318 364 C 402 290, 508 282, 580 326 C 506 322, 424 350, 350 396 Z"/>
-      <path d="M318 364 C 244 376, 184 434, 160 516 C 214 464, 270 434, 332 410 Z"/>
-      <path d="M318 364 C 398 380, 462 438, 484 522 C 432 470, 380 442, 316 416 Z"/>
-      <circle cx="312" cy="386" r="16"/><circle cx="338" cy="398" r="13"/>
-    </g>
-    <g id="sun">
-      <circle cx="0" cy="0" r="70" fill="#1F4E8C"/>
-      <g stroke="#1F4E8C" stroke-width="20" stroke-linecap="round">
-        <line x1="0" y1="-108" x2="0" y2="-136"/><line x1="0" y1="108" x2="0" y2="136"/>
-        <line x1="-108" y1="0" x2="-136" y2="0"/><line x1="108" y1="0" x2="136" y2="0"/>
-        <line x1="-76" y1="-76" x2="-96" y2="-96"/><line x1="76" y1="76" x2="96" y2="96"/>
-        <line x1="76" y1="-76" x2="96" y2="-96"/><line x1="-76" y1="76" x2="-96" y2="96"/>
-      </g>
-    </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- 手描き風: 輪郭を揺らす -->
+    <filter id="rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="3" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="13" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rough2" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="3" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <!-- かすれ(筆のムラ): 塗りの中に薄い抜けを作る -->
+    <filter id="dry" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11" result="t"/>
+      <feColorMatrix in="t" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.2 1.6" result="m"/>
+      <feComposite in="SourceGraphic" in2="m" operator="out"/>
+    </filter>
+    <clipPath id="win"><rect x="150" y="150" width="724" height="724" rx="6"/></clipPath>
   </defs>
+
   <rect width="1024" height="1024" fill="#F5EEDF"/>
-  <use href="#sun" transform="translate(830 200)"/>
-  <use href="#palm"/>
-  <use href="#wave"/>
+
+  <!-- 切手の枠(少し揺らす) -->
+  <g filter="url(#rough2)">
+    <rect x="90" y="90" width="844" height="844" rx="10" fill="#1F4E8C"/>
+    <g fill="#F5EEDF">
+      <g id="perf">
+        <circle cx="90" cy="134" r="22"/><circle cx="90" cy="206" r="20"/><circle cx="90" cy="278" r="23"/><circle cx="90" cy="350" r="21"/>
+        <circle cx="90" cy="422" r="22"/><circle cx="90" cy="494" r="20"/><circle cx="90" cy="566" r="23"/><circle cx="90" cy="638" r="21"/>
+        <circle cx="90" cy="710" r="22"/><circle cx="90" cy="782" r="20"/><circle cx="90" cy="854" r="23"/>
+      </g>
+      <use href="#perf" transform="translate(844 0)"/>
+      <use href="#perf" transform="rotate(90 512 512)"/>
+      <use href="#perf" transform="rotate(90 512 512) translate(0 -844)"/>
+      <rect x="150" y="150" width="724" height="724" rx="6"/>
+    </g>
+  </g>
+
+  <!-- 中身 -->
+  <g clip-path="url(#win)">
+    <g transform="translate(150 150) scale(0.707)" filter="url(#rough)">
+      <g>
+        <!-- 太陽 -->
+        <g transform="translate(880 140) scale(0.9)">
+          <circle r="76" fill="#1F4E8C"/>
+          <g stroke="#1F4E8C" stroke-linecap="round" fill="none">
+            <path stroke-width="26" d="M 0 -112 L 0 -150"/><path stroke-width="18" d="M 0 112 L 0 140"/>
+            <path stroke-width="22" d="M -112 0 L -146 0"/><path stroke-width="16" d="M 112 0 L 140 0"/>
+            <path stroke-width="24" d="M -80 -80 L -104 -104"/><path stroke-width="14" d="M 80 80 L 100 100"/>
+            <path stroke-width="18" d="M 80 -80 L 104 -104"/><path stroke-width="22" d="M -80 80 L -102 102"/>
+          </g>
+        </g>
+        <!-- ヤシ(太め・葉は不ぞろい) -->
+        <g fill="#1F4E8C">
+          <path d="M226 700 C 214 600, 228 460, 292 352 L 344 366 C 286 470, 280 600, 300 700 Z"/>
+          <path d="M322 350 C 240 270, 120 280, 60 340 C 140 328, 236 350, 300 392 Z"/>
+          <path d="M322 350 C 300 240, 220 180, 130 178 C 206 208, 272 280, 300 372 Z"/>
+          <path d="M322 350 C 330 236, 410 160, 510 156 C 430 196, 372 282, 348 376 Z"/>
+          <path d="M322 350 C 410 268, 530 262, 606 316 C 526 310, 434 340, 354 392 Z"/>
+          <path d="M322 350 C 236 366, 170 432, 148 526 C 208 466, 268 432, 336 404 Z"/>
+          <path d="M322 350 C 410 372, 480 434, 500 530 C 444 470, 386 438, 316 412 Z"/>
+          <circle cx="314" cy="384" r="20"/><circle cx="346" cy="398" r="16"/>
+        </g>
+        <!-- 波: 厚くて大きい本体 -->
+        <path fill="#1F4E8C" d="M -20 760 C 80 740, 180 700, 240 620 C 300 540, 340 420, 430 340 C 530 256, 670 236, 790 268 C 900 296, 950 380, 958 470 C 966 560, 990 660, 1044 690 L 1044 1044 L -20 1044 Z"/>
+        <!-- 頂上の泡のふくらみ(大小不ぞろい) -->
+        <g fill="#1F4E8C">
+          <circle cx="440" cy="345" r="36"/><circle cx="530" cy="290" r="42"/><circle cx="630" cy="250" r="44"/>
+          <circle cx="730" cy="238" r="48"/><circle cx="830" cy="262" r="40"/><circle cx="905" cy="318" r="32"/>
+          <circle cx="270" cy="590" r="28"/><circle cx="170" cy="690" r="24"/>
+        </g>
+        <!-- チューブ(空洞・小さめ=波が厚く見える) -->
+        <ellipse cx="765" cy="600" rx="152" ry="142" fill="#F5EEDF"/>
+        <!-- リップの巻き(太→細) -->
+        <g fill="none" stroke="#1F4E8C" stroke-linecap="round">
+          <path stroke-width="112" d="M 600 300 C 730 250, 890 300, 924 450"/>
+          <path stroke-width="82" d="M 924 450 C 950 570, 880 660, 796 652"/>
+          <path stroke-width="54" d="M 796 652 C 726 644, 700 570, 748 538"/>
+          <path stroke-width="32" d="M 748 538 C 788 516, 822 548, 806 584"/>
+        </g>
+        <!-- 泡(クリーム、大小) -->
+        <g fill="#F5EEDF">
+          <circle cx="540" cy="360" r="20"/><circle cx="470" cy="430" r="14"/><circle cx="400" cy="530" r="16"/>
+          <circle cx="650" cy="312" r="12"/><circle cx="330" cy="640" r="18"/><circle cx="960" cy="720" r="14"/>
+          <circle cx="120" cy="780" r="16"/><circle cx="600" cy="790" r="13"/><circle cx="880" cy="380" r="10"/>
+        </g>
+        <!-- 筆のかすれ(細い抜け線) -->
+        <g fill="none" stroke="#F5EEDF" stroke-linecap="round" opacity=".9">
+          <path stroke-width="9" d="M 300 700 C 360 640, 420 590, 470 530"/>
+          <path stroke-width="5" d="M 330 740 C 400 680, 450 630, 500 580"/>
+          <path stroke-width="7" d="M 560 470 C 600 430, 640 400, 690 380"/>
+          <path stroke-width="4" d="M 150 800 C 200 780, 240 760, 280 730"/>
+          <path stroke-width="6" d="M 860 760 C 900 740, 930 720, 960 690"/>
+          <path stroke-width="5" d="M 620 720 C 660 700, 700 690, 740 690"/>
+        </g>
+        <!-- しぶき -->
+        <g fill="#1F4E8C">
+          <circle cx="540" cy="220" r="16"/><circle cx="630" cy="180" r="12"/><circle cx="730" cy="164" r="18"/>
+          <circle cx="830" cy="190" r="12"/><circle cx="920" cy="240" r="15"/><circle cx="470" cy="270" r="10"/>
+        </g>
+        <!-- 手前の小波(太さ違い・筆っぽく) -->
+        <g fill="none" stroke="#F5EEDF" stroke-linecap="round">
+          <path stroke-width="26" d="M 70 880 C 120 846, 170 846, 220 880"/>
+          <path stroke-width="14" d="M 220 880 C 270 914, 320 914, 370 880"/>
+          <path stroke-width="22" d="M 620 910 C 670 876, 720 876, 770 910"/>
+          <path stroke-width="12" d="M 770 910 C 820 944, 870 944, 920 910"/>
+          <path stroke-width="18" d="M 380 960 C 430 930, 480 930, 530 960"/>
+        </g>
+      </g>
+    </g>
+  </g>
 </svg>
