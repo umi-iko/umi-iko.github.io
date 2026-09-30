@@ -231,7 +231,24 @@ h2{font-size:1.05rem; margin:0 0 10px;}
       <button class="btn" style="margin-top:12px" onclick="goToPin()">次へ</button>
       <div class="pin-error" id="name-error"></div>
     </div>
+    <button class="btn secondary" onclick="showRegister()">招待コードで新しく登録する</button>
     <p class="sub" style="text-align:center">名前やPINがわからないときは、アプリに誘ってくれた人に聞いてください</p>
+  </div>
+  <div id="login-step-register" class="hidden">
+    <div class="card">
+      <h2>はじめての登録</h2>
+      <label class="sub">招待コード(誘ってくれた人に聞いてね)</label>
+      <input class="field" id="reg-code" maxlength="30" autocapitalize="characters" autocorrect="off" spellcheck="false" style="margin:4px 0 12px">
+      <label class="sub">名前(みんなに表示されます。ニックネームでOK)</label>
+      <input class="field" id="reg-name" maxlength="20" autocorrect="off" spellcheck="false" style="margin:4px 0 12px">
+      <label class="sub">PIN(6桁の数字。ログインに使います)</label>
+      <input class="field" id="reg-pin" type="password" inputmode="numeric" maxlength="6" style="margin:4px 0 12px">
+      <label class="sub">PIN(もう一度)</label>
+      <input class="field" id="reg-pin2" type="password" inputmode="numeric" maxlength="6" style="margin:4px 0">
+      <p class="pin-error" id="reg-error"></p>
+      <button class="btn" onclick="submitRegister()">登録してはじめる</button>
+      <button class="btn secondary" style="margin-top:10px" onclick="showLogin()">← ログインに戻る</button>
+    </div>
   </div>
   <div id="login-step-pin" class="hidden">
     <div class="card">
@@ -297,6 +314,10 @@ h2{font-size:1.05rem; margin:0 0 10px;}
     </div>
     <div class="card hidden" id="admin-card">
       <h2>管理者メニュー</h2>
+      <div style="margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid var(--line)">
+        <div class="sub" style="margin-bottom:6px">招待コード(知っている人は自分で登録できます)</div>
+        <div id="invite-box"></div>
+      </div>
       <div style="margin-bottom:14px">
         <div class="sub" style="margin-bottom:6px">仲間を追加(名前と最初のPIN)</div>
         <input class="field" id="add-name" placeholder="名前(例: タロウ)" maxlength="20">
@@ -435,6 +456,7 @@ const state = {
   tab: 'cal',
   lastStroke: null,         // 直前になぞった範囲 {genre, dates[]}
   loginMember: null,        // ログイン画面で入力中 {name}
+  pendingInvite: null,      // 招待リンクから来たときのコード
   pinDigits: '',
 };
 
@@ -493,6 +515,15 @@ async function loadExistingLogin(){
 }
 
 async function boot(){
+  try {
+    const u = new URL(location.href);
+    const inv = u.searchParams.get('invite');
+    if (inv) {
+      state.pendingInvite = inv;
+      u.searchParams.delete('invite');
+      history.replaceState(null, '', u.pathname + (u.search || '') + u.hash);
+    }
+  } catch (e) {}
   spin(true);
   try {
     await ensureAnonSession();
@@ -512,13 +543,62 @@ async function showLogin(){
   $('login-screen').classList.remove('hidden');
   $('login-step-name').classList.remove('hidden');
   $('login-step-pin').classList.add('hidden');
+  $('login-step-register').classList.add('hidden');
   $('name-error').textContent = '';
+  // 招待リンク(?invite=コード)から来た人は、登録画面を開く
+  if (state.pendingInvite) { const c = state.pendingInvite; state.pendingInvite = null; showRegister(c); return; }
   // 名前の一覧は出さない(誰が登録しているか分からないように)。
   // この端末で前回ログインした名前だけ、入力欄に入れておく
   let last = '';
   try { last = localStorage.getItem('surf-iko:last-name') || ''; } catch (e) {}
   $('login-name').value = last;
   $('login-name').onkeydown = (e) => { if (e.key === 'Enter') goToPin(); };
+}
+
+/* ---------- 招待コードで新規登録 ---------- */
+function showRegister(code){
+  $('login-step-name').classList.add('hidden');
+  $('login-step-pin').classList.add('hidden');
+  $('login-step-register').classList.remove('hidden');
+  $('reg-error').textContent = '';
+  if (code) $('reg-code').value = code;
+}
+async function submitRegister(){
+  const code = $('reg-code').value.trim();
+  const name = $('reg-name').value.trim();
+  const pin = $('reg-pin').value, pin2 = $('reg-pin2').value;
+  const err = $('reg-error');
+  if (!code) { err.textContent = '招待コードを入れてください'; return; }
+  if (!name) { err.textContent = '名前を入れてください'; return; }
+  if (!/^[0-9]{6}$/.test(pin)) { err.textContent = 'PINは6桁の数字にしてください'; return; }
+  if (pin !== pin2) { err.textContent = 'PINが2回とも同じか確認してください'; return; }
+  spin(true);
+  const { data, error } = await sb.rpc('register_with_invite', { p_code: code, p_name: name, p_pin: pin });
+  spin(false);
+  if (error) { err.textContent = '通信エラーです。もう一度お試しください'; return; }
+  if (!data.ok) {
+    const msgs = {
+      bad_code: '招待コードが違います',
+      busy: '間違いが続いたため、しばらく登録を受け付けていません。時間をおいてお試しください',
+      name_taken: 'その名前はすでに使われています。別の名前にしてください',
+      bad_name: '名前は1〜20文字にしてください',
+      bad_pin: 'PINは6桁の数字にしてください',
+      no_auth: '接続エラーです。開き直してください',
+    };
+    err.textContent = msgs[data.error] || '登録できませんでした';
+    return;
+  }
+  const m = data.member;
+  try { localStorage.setItem('surf-iko:last-name', m.name); } catch (e) {}
+  await enterApp({ id: m.id, name: m.name, is_admin: m.is_admin });
+  openModal(`
+    <h2>ようこそ、${esc(m.name)} さん!</h2>
+    <p class="sub">次からは、名前「${esc(m.name)}」と今決めたPINでログインします。</p>
+    <p class="sub">あなたの海・プール・海外の予定は、まだ誰にも見えていません。<br>
+      「仲間」タブの<b>「見せる」</b>で、見せたい人を選んでね。</p>
+    <button class="btn" onclick="closeModal(); showTab('nakama')">仲間タブを開く</button>
+    <button class="btn secondary" onclick="closeModal()">あとで</button>
+  `);
 }
 
 function goToPin(){
@@ -1450,7 +1530,7 @@ async function renderJibun(){
   // 管理者メニュー
   if (state.me.is_admin) {
     $('admin-card').classList.remove('hidden');
-    await refreshSocial();
+    await Promise.all([refreshSocial(), renderInvite()]);
     $('admin-members').innerHTML = state.members.map(m => `
       <div class="member-row">
         <span class="avatar" style="background:${memberColor(m.id)}">${esc(m.name[0])}</span>
@@ -1461,6 +1541,62 @@ async function renderJibun(){
       </div>`).join('');
   } else {
     $('admin-card').classList.add('hidden');
+  }
+}
+
+/* ---------- 招待コード(管理者) ---------- */
+function inviteUrl(code){ return location.origin + location.pathname + '?invite=' + encodeURIComponent(code); }
+function inviteText(code){
+  return `🌊「サーフィン行こ」に招待します!\n` +
+    `① このリンクをSafariで開く\n${inviteUrl(code)}\n` +
+    `② 名前と6桁のPINを決めて登録\n` +
+    `③ 共有ボタン→「ホーム画面に追加」でアプリになるよ\n` +
+    `(招待コード: ${code})`;
+}
+async function renderInvite(){
+  const { data: code, error } = await sb.rpc('admin_get_invite');
+  const box = $('invite-box');
+  if (error) { box.innerHTML = '<p class="sub">読み込めませんでした(追加SQLの実行が必要かもしれません)</p>'; return; }
+  box.innerHTML = code ? `
+      <div class="row" style="margin-bottom:8px">
+        <b style="font-size:1.15rem; letter-spacing:.05em">${esc(code)}</b>
+        <span class="sub">(受付中)</span>
+      </div>
+      <button class="btn" onclick="copyInvite()">招待メッセージをコピー</button>
+      <div class="row" style="margin-top:8px; gap:8px">
+        <button class="btn secondary" onclick="setInvite('random')">新しいコードに変える</button>
+        <button class="btn danger-outline" onclick="setInvite(null)">受付を止める</button>
+      </div>
+      <p class="sub" style="margin-top:6px">コードを変えると、前のコード・リンクは使えなくなります。</p>`
+    : `
+      <p class="sub" style="margin-bottom:8px">いまは受付を止めています(誰も新しく登録できません)。</p>
+      <button class="btn" onclick="setInvite('random')">招待コードを作る</button>`;
+  state.inviteCode = code || null;
+}
+function randomInviteCode(){
+  // 見間違えやすい文字(0/O, 1/I/L)を除いた8文字
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const buf = new Uint32Array(8); crypto.getRandomValues(buf);
+  const s = [...buf].map(n => chars[n % chars.length]).join('');
+  return s.slice(0, 4) + '-' + s.slice(4);
+}
+async function setInvite(mode){
+  const code = mode === 'random' ? randomInviteCode() : null;
+  spin(true);
+  const { error } = await sb.rpc('admin_set_invite', { p_code: code });
+  spin(false);
+  if (error) { toast('変更に失敗しました', true); return; }
+  toast(code ? `招待コードを「${code}」にしました` : '受付を止めました');
+  await renderInvite();
+}
+async function copyInvite(){
+  if (!state.inviteCode) return;
+  const text = inviteText(state.inviteCode);
+  try { await navigator.clipboard.writeText(text); toast('コピーしました。LINEなどに貼り付けてね'); }
+  catch (e) {
+    openModal(`<h2>招待メッセージ</h2><p class="sub">長押しでコピーしてね</p>
+      <textarea class="field" rows="8" readonly>${esc(text)}</textarea>
+      <button class="btn secondary" onclick="closeModal()">閉じる</button>`);
   }
 }
 
