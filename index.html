@@ -271,6 +271,35 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
   max-height:80vh; overflow-y:auto;}
 #modal h2{margin-bottom:12px;}
 #modal .btn{margin-top:10px;}
+
+/* ===== 使い方(ヘルプ) ===== */
+.help-btn{position:absolute; top:calc(10px + env(safe-area-inset-top)); right:12px; width:40px; height:40px; border-radius:50%;
+  border:2px solid #1F4E8C; color:#1F4E8C; background:var(--card); font-weight:700; font-size:1.1rem;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(31,78,140,.15); z-index:5;}
+#login-screen{position:relative;}
+#cal-help{position:static; width:36px; height:36px; font-size:1rem; margin-left:6px; flex:none;}
+#help-screen{position:fixed; inset:0; background:var(--bg); z-index:60; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:0 14px calc(40px + var(--safe-bottom));}
+#help-screen .help-top{position:sticky; top:0; background:var(--bg); padding:calc(10px + env(safe-area-inset-top)) 0 8px;
+  display:flex; align-items:center; gap:10px; z-index:1; border-bottom:1px dashed #D9CFB8; margin-bottom:12px;}
+#help-screen .help-top h1{margin:0; flex:1; font-size:1.25rem;}
+#help-screen .help-close{min-height:44px; padding:0 16px; border-radius:12px; background:#1F4E8C; color:#fff; font-weight:700; font-size:1rem;}
+.help-inner{max-width:520px; margin:0 auto; font-size:1.05rem; line-height:1.75;}
+.help-inner details{background:var(--card); border-radius:16px; margin-bottom:12px; overflow:hidden;
+  box-shadow:0 1px 3px rgba(31,78,140,.08);}
+.help-inner summary{list-style:none; cursor:pointer; padding:16px 18px; font-weight:700; font-size:1.1rem; display:flex; align-items:center; gap:10px;}
+.help-inner summary::-webkit-details-marker{display:none;}
+.help-inner summary .no{flex:none; width:32px; height:32px; border-radius:50%; background:#1F4E8C; color:#fff; font-size:.95rem;
+  display:flex; align-items:center; justify-content:center;}
+.help-inner summary::after{content:'＋'; margin-left:auto; color:#1F4E8C; font-size:1.3rem;}
+.help-inner details[open] summary::after{content:'－';}
+.help-inner .hb{padding:0 18px 18px;}
+.help-inner .hb p{margin:0 0 10px;}
+.help-inner .hb ol, .help-inner .hb ul{margin:0 0 10px; padding-left:1.4em;}
+.help-inner .hb li{margin-bottom:6px;}
+.help-inner .tip{background:#E4ECF6; color:#1F4E8C; border-radius:12px; padding:10px 14px; margin:8px 0; font-size:.98rem;}
+.help-inner .kw{display:inline-block; border:1.5px solid #1F4E8C; color:#1F4E8C; border-radius:8px; padding:0 8px; font-weight:700; white-space:nowrap;}
+.help-inner .sw{display:inline-block; width:1em; height:1em; border-radius:50%; vertical-align:-2px; margin-right:4px;}
 </style>
 </head>
 <body>
@@ -293,6 +322,7 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 
 <!-- ============ ログイン画面 ============ -->
 <div id="login-screen" class="screen hidden">
+  <button class="help-btn" onclick="openHelp()" aria-label="使い方">？</button>
   <div class="login-logo">
     <img src="icons/icon-192.png" alt="">
     <div>サーフィン行こ</div>
@@ -355,6 +385,7 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
       <div id="cal-title"></div>
       <button id="btn-today">今日</button>
       <button class="nav" id="btn-next">›</button>
+      <button class="help-btn" id="cal-help" onclick="openHelp()" aria-label="使い方">？</button>
     </div>
     <div id="cal-grid"></div>
     <div id="legend"></div>
@@ -408,6 +439,7 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
         <span class="sub" id="my-role"></span></div>
       <button class="btn secondary" style="margin-top:14px" onclick="openPinChange('normal')">PINを変える</button>
       <button class="btn secondary" style="margin-top:10px" onclick="confirmLogout()">ログアウト</button>
+      <button class="btn secondary" style="margin-top:10px" onclick="openHelp()">📖 使い方を見る</button>
     </div>
     <div class="card" id="profile-card">
       <h2>🙋 プロフィール</h2>
@@ -443,6 +475,187 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
     <button id="tab-cal" onclick="showTab('cal')"><svg class="ic ticon"><use href="#i-cal"/></svg>カレンダー<span id="cal-dot" class="reddot hidden"></span></button>
     <button id="tab-nakama" onclick="showTab('nakama')"><svg class="ic ticon"><use href="#i-people"/></svg>仲間<span id="nakama-dot" class="reddot hidden"></span></button>
     <button id="tab-jibun" onclick="showTab('jibun')"><svg class="ic ticon"><use href="#i-person"/></svg>自分</button>
+  </div>
+</div>
+
+<!-- ============ 使い方(ヘルプ) ============ -->
+<div id="help-screen" class="hidden">
+  <div class="help-top">
+    <h1>📖 使い方</h1>
+    <button class="help-close" onclick="closeHelp()">✕ 閉じる</button>
+  </div>
+  <div class="help-inner">
+    <p style="margin:0 0 14px">知りたいところを押すと開きます。もう一度押すと閉じます。</p>
+
+    <details open>
+      <summary><span class="no">1</span>このアプリでできること</summary>
+      <div class="hb">
+        <p>「サーフィン行こ」は、仲間どうしで<b>「いつ海に行けるか」</b>を見せ合うカレンダーです。</p>
+        <ul>
+          <li>自分が行ける日を、指でなぞって登録</li>
+          <li>仲間が行ける日が、点(●)で見える</li>
+          <li>海外や船のトリップの日程合わせ、参加者だけの掲示板</li>
+          <li>仲間が予定を入れたら、スマホに通知</li>
+        </ul>
+        <p class="tip">お金はかかりません。名前とPIN(6桁の数字)以外、個人情報は登録しません。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="no">2</span>スマホのホーム画面に入れる(最初に1回)</summary>
+      <div class="hb">
+        <p>アプリのように使えて、通知も届くようになります。<b>iPhoneは、これをしないと通知が届きません。</b></p>
+        <p><b>iPhone(Safari)</b></p>
+        <ol>
+          <li>Safariで <span class="kw">umi-iko.github.io</span> を開く</li>
+          <li>画面の下(または上)にある<b>「共有」ボタン</b>(□から↑が出ている形)を押す</li>
+          <li>下にスクロールして<b>「ホーム画面に追加」</b>を押す</li>
+          <li>右上の<b>「追加」</b>を押す</li>
+        </ol>
+        <p><b>Android(Chrome)</b></p>
+        <ol>
+          <li>Chromeで <span class="kw">umi-iko.github.io</span> を開く</li>
+          <li>右上の<b>「⋮」</b>を押す</li>
+          <li><b>「ホーム画面に追加」</b>(または「アプリをインストール」)を押す</li>
+        </ol>
+        <p>これからは、ホーム画面にできた青い切手のアイコンから開いてください。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="no">3</span>はじめての登録・ログイン</summary>
+      <div class="hb">
+        <p><b>はじめての人</b></p>
+        <ol>
+          <li>誘ってくれた人に<b>「招待コード」</b>を聞く</li>
+          <li>ログイン画面の<b>「招待コードで新しく登録する」</b>を押す</li>
+          <li>招待コード、名前(ニックネームでOK)、PIN(自分で決めた6桁の数字)を入れて<b>「登録してはじめる」</b></li>
+        </ol>
+        <p><b>2回目から</b></p>
+        <ol>
+          <li>名前を入れて<b>「次へ」</b></li>
+          <li>PINの6桁を押す(6つ入れると自動で入ります)</li>
+        </ol>
+        <p class="tip">一度ログインすると、次からは開くだけで入れます。PINを忘れたら、誘ってくれた人(管理者)に言えば新しいPINにしてもらえます。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="no">4</span>行ける日を入れる(いちばん大事)</summary>
+      <div class="hb">
+        <ol>
+          <li>上の<b>「海」「プール」「海外」</b>から、どれかを押す</li>
+          <li>その下の丸いボタンから、気持ちを1つ押す
+            <ul>
+              <li><b>行く</b> … 行くと決めている(いちばん濃い色)</li>
+              <li><b>誰か行こう</b> … 誰か行くなら一緒に行きたい</li>
+              <li><b>ワンチャン</b> … 行けるかもしれない</li>
+            </ul>
+          </li>
+          <li>カレンダーの日付を<b>指でなぞる</b>(1日だけなら押すだけ)。色がつけば登録完了</li>
+        </ol>
+        <p><b>消したいとき</b> … 同じボタンのまま、もう一度なぞると消えます。<b>「🧽 消しゴム」</b>を選んでなぞってもOK。</p>
+        <p><b>メモを付けたいとき</b> … 色をつけた日を<b>長押し</b>(1秒くらい)すると、「朝一だけ」などのメモが書けます。</p>
+        <p class="tip">保存ボタンはありません。なぞった時点で保存されています。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="no">5</span>みんなの予定を見る</summary>
+      <div class="hb">
+        <ul>
+          <li>日付の中の<b>点(●)</b>が、その日に行ける仲間の人数です(1人=1つ)</li>
+          <li>行き方のボタンを何も選んでいない状態で<b>日付を押す</b>と、誰がどんな気持ちかが見られます</li>
+          <li>左右に<b>スワイプ</b>(指で横にはらう)すると、「海 → プール → 海外」と切り替わります</li>
+          <li>下の<b>「仲間」</b>を押すと、仲間の一覧。名前を押すとその人のカレンダーとプロフィールが見られます</li>
+          <li>名前に<b>赤い丸</b>が付いていたら、その人が新しく予定を入れたしるしです</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="no">6</span>誰に見せるか決める</summary>
+      <div class="hb">
+        <p>自分の予定は、<b>自分が「見せる」にした人だけ</b>に見えます。誰にも見せていないと、誰にも見えません。</p>
+        <ol>
+          <li>下の<b>「仲間」</b>を押す</li>
+          <li>見せたい人の<b>「見せる」のチェック</b>を押して入れる(もう一度押すとやめられます)</li>
+        </ol>
+        <p class="tip">相手が自分に「見せる」にしてくれると、相手の予定が自分にも見えるようになります。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="no">7</span>トリップ(海外・遠征)の日程合わせ</summary>
+      <div class="hb">
+        <p><b>トリップを作る(言い出しっぺ)</b></p>
+        <ol>
+          <li>上のタブの右端<b>「＋追加」</b>を押す</li>
+          <li>名前(例: メンタワイ)と、候補の期間、誘う人を選んで作る</li>
+        </ol>
+        <p><b>日程を合わせる(みんな)</b></p>
+        <ol>
+          <li>上のタブにトリップの名前が出るので押す</li>
+          <li>ふつうのカレンダーと同じように、行ける日をなぞる</li>
+          <li>全員の色が重なった日が、みんな行ける日</li>
+        </ol>
+        <p><b>決まったら</b> … 作った人が<b>「日程を確定」</b>を押します。すると参加者だけの<b>トリップページ</b>ができて、しおり(集合場所・持ち物などのメモ)と掲示板が使えます。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="no">8</span>ボートトリップの「募集」に答える</summary>
+      <div class="hb">
+        <p>船のトリップで席が余ったとき、<b>「📣 募集」</b>のタブが出ることがあります。</p>
+        <ol>
+          <li>そのタブを押すと、日程・料金などの案内が読めます</li>
+          <li><b>「行く」「前向きに検討」「様子見」「行けない」</b>のどれかを押す。あとで変えてもOK</li>
+          <li>締切のあと、主催者が参加者を決めます。決まると「確定」の連絡が来て、トリップページに入れます</li>
+        </ol>
+        <p class="tip">「行く」を押しても、席の数によってはキャンセル待ちになることがあります。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="no">9</span>行った記録(サーフィンした日数)</summary>
+      <div class="hb">
+        <p>「行く」にしていた日は、その日が過ぎると自動で<b>「行った」</b>として数えられます。</p>
+        <ul>
+          <li>下の<b>「自分」</b>を押すと、今年・累計の日数が見られます</li>
+          <li><b>行かなかった日</b> … 「🧽 消しゴム」で過去の日をなぞると取り消し</li>
+          <li><b>予定に入れてなかったけど行った日</b> … <b>「✓ 行った」</b>を選んで過去の日をなぞる</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="no">10</span>通知を受け取る</summary>
+      <div class="hb">
+        <p>仲間が予定を入れたときなどに、スマホに知らせが届き、アイコンに数字が付きます。</p>
+        <ol>
+          <li><b>ホーム画面のアイコンから</b>アプリを開く(2番を参照。iPhoneはこれが必須)</li>
+          <li>下の<b>「自分」</b>→<b>「🔔 通知」</b>の<b>「この端末で通知をオンにする」</b>を押す</li>
+          <li>スマホが「通知を許可しますか?」と聞いてきたら<b>「許可」</b></li>
+          <li><b>「テスト通知を送る」</b>を押して、1分以内に届けばOK</li>
+        </ol>
+        <p><b>細かい設定</b> … 「控えめ」にすると音が鳴らず、通知が1件にまとまります。「どんな予定を知らせるか」(海だけ、「行く」だけ、この人だけ、など)も同じ画面で決められます。</p>
+        <p class="tip">届かないときは、スマホの「設定」→「通知」で、このアプリの通知が許可されているか見てください。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="no">11</span>困ったとき</summary>
+      <div class="hb">
+        <ul>
+          <li><b>PINを忘れた</b> … 誘ってくれた人(管理者)に言うと、新しいPINにしてもらえます</li>
+          <li><b>表示が古い・おかしい</b> … アプリを一度閉じて開き直してください</li>
+          <li><b>色がつかない</b> … 行き方のボタン(行く/誰か行こう/ワンチャン)を選んでいるか確認。何も選んでいないと「見るモード」です</li>
+          <li><b>仲間の予定が見えない</b> … 相手があなたに「見せる」にしていないと見えません。相手に頼んでください</li>
+          <li><b>間違えて登録した</b> … 同じボタンでもう一度なぞれば消えます。あわてなくて大丈夫</li>
+        </ul>
+        <p>それでも分からないときは、誘ってくれた人に聞いてください。</p>
+      </div>
+    </details>
   </div>
 </div>
 
@@ -2679,6 +2892,17 @@ function openModal(html){
   $('modal-back').classList.remove('hidden');
 }
 function closeModal(){ $('modal-back').classList.add('hidden'); }
+
+/* ---------- 使い方(ヘルプ) ---------- */
+function openHelp(){
+  $('help-screen').classList.remove('hidden');
+  $('help-screen').scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+function closeHelp(){
+  $('help-screen').classList.add('hidden');
+  document.body.style.overflow = '';
+}
 
 /* =====================================================================
    起動・Service Worker
