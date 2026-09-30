@@ -28,7 +28,7 @@ window.VAPID_PUBLIC_KEY  = "BA9Xm1y7twV-ylxSr-6Ie0Cl3AMbKSUeK_ES5KWK8f6NQxncSMMB
 <style>
 /* ================= 基本 ================= */
 :root{
-  --accent:#1F4E8C; --accent-weak:#E4ECF6;
+  --accent:#1F4E8C; --accent-weak:#E4ECF6; --genre:#1F4E8C; --genre-weak:#E4ECF6;
   --bg:#F6F0E4; --card:#FFFCF5; --cell:#F0E9D8; --text:#1E3550; --sub:#7A8794;
   --line:#E4DCCB; --danger:#D64545; --safe-bottom:env(safe-area-inset-bottom,0px);
 }
@@ -75,6 +75,8 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 .spin{width:38px; height:38px; border:4px solid var(--accent-weak);
   border-top-color:var(--accent); border-radius:50%; animation:sp 1s linear infinite;}
 @keyframes sp{to{transform:rotate(360deg);}}
+@keyframes pop{0%{transform:scale(1);}45%{transform:scale(1.14);}100%{transform:scale(1);}}
+.day.pop{animation:pop .28s ease-out;}
 
 /* ================= ログイン ================= */
 #login-screen{padding-top:36px;}
@@ -110,15 +112,16 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 
 /* ================= ジャンルタブ ================= */
 /* ジャンル = 上に並ぶ「タブ」(アイコン+名前、下線で選択) */
-#genre-tabs{display:flex; gap:2px; margin:0 -14px 10px; overflow-x:auto; padding:0 12px;
-  border-bottom:2px solid var(--line); -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+#genre-row{display:flex; align-items:flex-end; margin:0 -14px 10px; border-bottom:2px solid var(--line);}
+#genre-tabs{display:flex; gap:2px; flex:1; min-width:0; overflow-x:auto; padding:0 4px 0 12px;
+  -webkit-overflow-scrolling:touch; scrollbar-width:none;}
 #genre-tabs::-webkit-scrollbar{display:none;}
 #genre-tabs button{flex:0 0 auto; min-width:74px; min-height:58px; padding:6px 12px 8px; border:none; border-radius:12px 12px 0 0;
   background:transparent; color:var(--sub); font-weight:700; font-size:.82rem; white-space:nowrap;
   display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:3px; position:relative;}
 #genre-tabs button .gi{width:24px; height:24px; stroke-width:1.9;}
-#genre-tabs button.active{color:var(--accent); background:var(--card);}
-#genre-tabs button.active::after{content:''; position:absolute; left:12px; right:12px; bottom:-2px; height:3px; border-radius:2px; background:var(--accent);}
+#genre-tabs button.active{color:var(--genre); background:var(--card);}
+#genre-tabs button.active::after{content:''; position:absolute; left:12px; right:12px; bottom:-2px; height:3px; border-radius:2px; background:var(--genre);}
 #genre-tabs button.trip-tab{color:#7A6BB8;}
 #genre-tabs button.trip-tab.active{color:#5B4FA8;}
 #genre-tabs button.trip-add{min-width:48px; color:#7A6BB8;}
@@ -178,6 +181,9 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 .acct-links{display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin:4px 0 18px;}
 .acct-links button{font-size:.85rem; color:var(--accent); padding:8px 12px; border-radius:10px; background:transparent; min-height:40px;}
 .acct-links button:active{background:var(--accent-weak);}
+.hi{width:20px; height:20px; vertical-align:-4px; margin-right:6px; stroke-width:2; flex:none;}
+h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
+.mini-help{width:28px; height:28px; border-radius:50%; border:1.5px solid var(--sub); color:var(--sub); font-size:.85rem; font-weight:700; flex:none;}
 .stat-big{font-size:2.2rem; font-weight:800; line-height:1.1;}
 .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px; text-align:center;}
 .stat-grid div{background:var(--bg); border-radius:10px; padding:8px 2px;}
@@ -186,16 +192,15 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 .trip-member-row:last-child{border-bottom:none;}
 
 /* ================= 絵の具パレット = 点線の箱に入った丸い「チップ」 ================= */
-.palette-box{background:var(--card); border:1.5px dashed #BFB39A; border-radius:18px; padding:8px 10px 4px; margin-bottom:10px;}
-.palette-label{font-size:.72rem; color:var(--sub); font-weight:700; letter-spacing:.08em; margin:0 2px 4px; display:flex; align-items:center; gap:4px;}
-#palette{display:flex; gap:8px; overflow-x:auto; padding:4px 2px 8px; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+#palette{display:flex; gap:8px; overflow-x:auto; padding:2px 2px 6px; margin:0 -14px; padding-left:14px; padding-right:14px; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
 #palette::-webkit-scrollbar{display:none;}
-.chip{flex-shrink:0; min-height:44px; border-radius:22px; padding:8px 16px; font-size:.9rem;
+.chip{flex-shrink:0; min-height:40px; border-radius:20px; padding:7px 15px; font-size:.88rem;
   font-weight:700; color:#fff; opacity:.55; border:2.5px solid transparent; white-space:nowrap; letter-spacing:.02em;}
 .chip.selected{opacity:1; border-color:#22333B; box-shadow:0 2px 6px rgba(0,0,0,.2);}
 .chip.eraser{background:#fff; color:var(--text); border:2.5px dashed var(--sub); opacity:1;}
 .chip.eraser.selected{border:2.5px solid var(--danger); color:var(--danger);}
-#paint-hint{font-size:.78rem; color:var(--sub); margin:0 2px 6px; min-height:1.2em;}
+#paint-hint{font-size:.78rem; color:var(--sub); margin:0 2px 8px; line-height:1.4;}
+#paint-hint:empty{display:none;}
 
 /* ================= カレンダー ================= */
 #cal-head{display:flex; align-items:center; margin-bottom:6px;}
@@ -247,7 +252,7 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 /* まとめてメモのバー */
 #bulk-memo-bar{position:fixed; bottom:calc(72px + var(--safe-bottom)); left:50%;
   transform:translateX(-50%); background:#2E3D46; color:#fff; border-radius:26px;
-  padding:10px 18px; display:flex; gap:14px; align-items:center; z-index:120; font-size:.9rem;
+  padding:10px 18px; display:flex; gap:14px; align-items:center; z-index:120; font-size:.9rem; white-space:nowrap; max-width:calc(100vw - 24px);
   box-shadow:0 4px 12px rgba(0,0,0,.25);}
 #bulk-memo-bar button{color:#8FD3F4; font-weight:700;}
 
@@ -287,7 +292,7 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
   border:2px solid #1F4E8C; color:#1F4E8C; background:var(--card); font-weight:700; font-size:1.1rem;
   display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(31,78,140,.15); z-index:5;}
 #login-screen{position:relative;}
-#cal-help{position:static; width:36px; height:36px; font-size:1rem; margin-left:6px; flex:none;}
+#cal-help{position:static; width:36px; height:36px; margin:0 10px 10px 4px; flex:none; border-width:1.5px;}
 #help-screen{position:fixed; inset:0; background:var(--bg); z-index:60; overflow-y:auto; -webkit-overflow-scrolling:touch;
   padding:0 14px calc(40px + var(--safe-bottom));}
 #help-screen .help-top{position:sticky; top:0; background:var(--bg); padding:calc(10px + env(safe-area-inset-top)) 0 8px;
@@ -341,6 +346,15 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
   <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M8 15h3"/></symbol>
   <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.5"/><path d="M2.5 20c.5-4 3.5-6 6.5-6s6 2 6.5 6M15.5 20c.3-2.5 2-4 4.5-4 1 0 1.7.2 2 .4"/></symbol>
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21a2 2 0 004 0"/></symbol>
+  <symbol id="i-surf" viewBox="0 0 24 24"><path d="M3 18c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0 4-2 5 0"/><path d="M4 12c6-9 13-9 16-8-1 3-3 8-9 10"/><path d="M10 11l3 3"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 01-10 0z"/><path d="M7 6H4a3 3 0 003 3M17 6h3a3 3 0 01-3 3"/><path d="M12 14v3M8 21h8M10 17h4v4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M4 19a2 2 0 012-2h13M8 7h7"/></symbol>
+  <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M4 15l8-8 7 7-4 4H9z"/><path d="M9 18l-3-3M3 21h18"/></symbol>
+  <symbol id="i-notes" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM8 11h8M8 15h6"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></symbol>
+  <symbol id="i-memo" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M13 7l3 3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 015 0c0 1.5-2.5 2-2.5 4M12 17h.01"/></symbol>
   <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.5-4.5 4-7 7.5-7s7 2.5 7.5 7"/></symbol>
 </svg>
 <div id="spinner"><div class="spin"></div></div>
@@ -400,19 +414,18 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 
   <!-- カレンダー -->
   <div id="view-cal" class="screen">
-    <div id="genre-tabs"></div>
-    <div class="palette-box">
-      <div class="palette-label">選んでカレンダーをなぞる</div>
-      <div id="palette"></div>
-      <div id="paint-hint"></div>
+    <div id="genre-row">
+      <div id="genre-tabs"></div>
+      <button class="help-btn" id="cal-help" onclick="openHelp()" aria-label="使い方"><svg class="ic" style="width:22px;height:22px;stroke-width:2"><use href="#i-help"/></svg></button>
     </div>
+    <div id="palette"></div>
+    <div id="paint-hint"></div>
     <div id="trip-summary" class="hidden"></div>
     <div id="cal-head">
       <button class="nav" id="btn-prev">‹</button>
       <div id="cal-title"></div>
       <button id="btn-today">今日</button>
       <button class="nav" id="btn-next">›</button>
-      <button class="help-btn" id="cal-help" onclick="openHelp()" aria-label="使い方">？</button>
     </div>
     <div id="cal-grid"></div>
     <div id="legend"></div>
@@ -423,7 +436,7 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
     <h1>仲間</h1>
     <div class="card" id="nakama-list"></div>
     <p class="sub">「見せる」にチェックした相手だけが、あなたの海・プール・海外の予定を見られます。<br>
-      相手が見せてくれている人だけ「表示」にチェックでき、カレンダーに重ねて表示されます。<br>
+      相手が見せてくれている人だけ「見たい」にチェックでき、カレンダーに重ねて表示されます。<br>
       トリップの調整帳は、参加者どうしで見えます(この設定とは別です)。</p>
   </div>
 
@@ -432,12 +445,12 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
     <button style="color:#6E4FBF; font-weight:600; min-height:44px" onclick="closeTripPage()">← カレンダーへ</button>
     <div id="trip-page-head"></div>
     <div class="card">
-      <div class="row"><h2 style="margin:0">📋 旅のしおり</h2><div class="spacer"></div>
+      <div class="row"><h2 style="margin:0"><svg class="ic hi"><use href="#i-notes"/></svg>旅のしおり</h2><div class="spacer"></div>
         <button class="t-btn" id="notes-edit-btn" style="color:#6E4FBF; font-weight:600; min-height:40px" onclick="editTripNotes()">編集</button></div>
       <div id="trip-notes" style="margin-top:10px"></div>
     </div>
     <div class="card">
-      <div class="row"><h2 style="margin:0">💬 掲示板</h2><div class="spacer"></div>
+      <div class="row"><h2 style="margin:0"><svg class="ic hi"><use href="#i-chat"/></svg>掲示板</h2><div class="spacer"></div>
         <button style="color:#6E4FBF; font-weight:600; min-height:40px" onclick="loadTripPosts(true)">↻ 更新</button></div>
       <div id="trip-posts" style="margin-top:6px"></div>
       <textarea class="field" id="post-input" maxlength="1000" placeholder="参加者に書き込む(例: 空港に7時集合でOK?)" style="margin-top:10px"></textarea>
@@ -466,11 +479,11 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
       <span class="sub" id="my-role" style="margin-left:6px"></span>
     </div>
     <div class="card" id="surf-record">
-      <h2>🏄 サーフィン記録</h2>
+      <div class="row" style="margin-bottom:8px"><h2 style="margin:0"><svg class="ic hi"><use href="#i-surf"/></svg>サーフィン記録</h2><div class="spacer"></div><button class="mini-help" onclick="toggleEl('surf-note')" aria-label="説明">?</button></div>
       <div id="surf-stats"><p class="sub">読み込み中…</p></div>
     </div>
     <div class="card" id="ranking-card">
-      <div class="row" style="margin-bottom:8px"><h2 style="margin:0">🏆 ランキング</h2><div class="spacer"></div>
+      <div class="row" style="margin-bottom:8px"><h2 style="margin:0"><svg class="ic hi"><use href="#i-trophy"/></svg>ランキング</h2><div class="spacer"></div>
         <div class="seg" id="rank-seg">
           <button class="on" data-scope="year" onclick="setRankScope('year')">今年</button>
           <button data-scope="all" onclick="setRankScope('all')">累計</button>
@@ -478,15 +491,15 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
       <div id="ranking-body"><p class="sub">読み込み中…</p></div>
     </div>
     <div class="card" id="profile-card">
-      <h2>🙋 プロフィール</h2>
+      <h2><svg class="ic hi"><use href="#i-person"/></svg>プロフィール</h2>
       <div id="profile-body"></div>
     </div>
     <div class="card" id="notify-card">
-      <h2>🔔 通知</h2>
+      <h2><svg class="ic hi"><use href="#i-bell"/></svg>通知</h2>
       <div id="notify-body"><p class="sub">読み込み中…</p></div>
     </div>
     <div class="acct-links">
-      <button onclick="openHelp()">📖 使い方</button>
+      <button onclick="openHelp()"><svg class="ic hi"><use href="#i-book"/></svg>使い方</button>
       <button onclick="openPinChange('normal')">PINを変える</button>
       <button onclick="confirmLogout()">ログアウト</button>
     </div>
@@ -664,7 +677,7 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
           <li>画面下の<b>「仲間」</b>を押す</li>
           <li>見せたい人の<b>「見せる」</b>にチェックを入れる(外せば非表示に戻ります)。全員に見せる場合は右上の<b>「全員に見せる」</b></li>
         </ol>
-        <p>「表示」のチェックは、その人の予定を自分のカレンダーに重ねて表示するかどうかの設定です。相手が自分に「見せる」にしていない場合はチェックできません。</p>
+        <p>「見たい」のチェックは、その人の予定を自分のカレンダーに重ねて表示するかどうかの設定です。相手が自分に「見せる」にしていない場合はチェックできません。</p>
       </div>
     </details>
 
@@ -918,9 +931,10 @@ function fmtDate(s){
   return `${m}/${d}(${w})`;
 }
 function setAccent(){
+  // 基調色(ネイビー)は固定。ジャンルの色はタブの下線と文字だけに使う
   const g = genreDef(state.genre);
-  document.documentElement.style.setProperty('--accent', g.accent);
-  document.documentElement.style.setProperty('--accent-weak', g.accentWeak);
+  document.documentElement.style.setProperty('--genre', g.accent);
+  document.documentElement.style.setProperty('--genre-weak', g.accentWeak);
 }
 
 /* =====================================================================
@@ -1337,13 +1351,13 @@ function renderPalette(){
        style="background:${w.color}" onclick="setPaint('went')">${w.label}</button>`;
   }
   html += `<button class="chip eraser ${state.paint === 'eraser' ? 'selected' : ''}"
-       onclick="setPaint('eraser')">🧽 消しゴム</button>`;
+       onclick="setPaint('eraser')"><svg class="ic hi" style="width:18px;height:18px"><use href="#i-eraser"/></svg>消しゴム</button>`;
   $('palette').innerHTML = html;
   $('paint-hint').textContent =
     state.paint === 'eraser' ? '消したい日をなぞってください(過去の日は「行かなかった」になります)' :
     state.paint === 'went' ? '実際に行った日(過去)をなぞってください。もう一度なぞると取り消し' :
-    state.paint ? `「${intentDef(state.genre, state.paint).label}」にする日をなぞってください(もう一度なぞると取り消し)` :
-    '上のボタンをどれか選ぶと、なぞった日に予定が入ります。今は日付タップでみんなの予定が見られます';
+    state.paint ? `「${intentDef(state.genre, state.paint).label}」にする日をなぞってください。もう一度なぞると取り消し` :
+    Object.keys(dayMap().mine).length ? '' : '上のボタンを選んで日付をなぞると、予定が入ります';
 }
 function setPaint(key){
   state.paint = (state.paint === key) ? null : key;
@@ -1462,17 +1476,17 @@ function renderTripSummary(trip, st){
   const boat = trip.kind === 'boat';
   const recruitBlock = boat && trip.confirmed_start ? `
     <div class="t-line" style="background:#F7F5FC; border-radius:10px; padding:8px 10px; margin-top:8px">
-      <b>🚤 定員 ${trip.capacity}人</b> ・ 行く ${trip.going.length}人 ・ 残り ${Math.max(0, trip.capacity - trip.going.length)}枠<br>
+      <b><svg class="ic hi"><use href="#i-boat"/></svg>定員 ${trip.capacity}人</b> ・ 行く ${trip.going.length}人 ・ 残り ${Math.max(0, trip.capacity - trip.going.length)}枠<br>
       <span class="sub">${trip.recruit_open
         ? `募集中${trip.recruit_deadline ? `(回答期限 ${fmtDate(trip.recruit_deadline)}${trip.recruit_deadline < todayStr() ? '・期限切れ' : ''})` : ''}`
         : '募集は始まっていません'}</span>
-      ${isCreator ? `<br><button class="btn secondary" style="margin-top:8px; color:#4B3A85; background:#EEE9F8" onclick="openRecruitManage('${trip.id}')">📣 募集の管理(声をかける・回答を見る・確定)</button>` : ''}
+      ${isCreator ? `<br><button class="btn secondary" style="margin-top:8px; color:#4B3A85; background:#EEE9F8" onclick="openRecruitManage('${trip.id}')"><svg class="ic hi"><use href="#i-mega"/></svg>募集の管理(声をかける・回答を見る・確定)</button>` : ''}
     </div>` : '';
   const confirmedBlock = trip.confirmed_start ? `
     <div class="t-line"><span class="t-confirmed">✅ 確定 ${rangeLabel([trip.confirmed_start, trip.confirmed_end])}</span></div>
     ${recruitBlock}
     <button class="btn" style="margin-top:10px; background:#6E4FBF" onclick="openTripPage('${trip.id}')">
-      📋 トリップページ(しおり・掲示板)${unread ? `<span class="badge">${unread}</span>` : ''}</button>
+      <svg class="ic hi"><use href="#i-notes"/></svg>トリップページ(しおり・掲示板)${unread ? `<span class="badge">${unread}</span>` : ''}</button>
     ${isCreator ? `<button class="t-btn" style="margin-top:4px" onclick="confirmUnconfirmTrip('${trip.id}')">確定を取り消す</button>` : ''}`
     : (isCreator ? `
     <div class="t-line sub">★☆の日程をタップすると、その日程で確定できます</div>
@@ -1481,7 +1495,7 @@ function renderTripSummary(trip, st){
     ? `<div class="t-line sub">未回答: ${st.unanswered.map(memberName).map(esc).join('、')}</div>` : '';
   box.innerHTML = `
     <div class="row">
-      <b>${boat ? '🚤' : '✈️'} ${esc(trip.name)}</b>
+      <b>${boat ? '<svg class="ic hi"><use href="#i-boat"/></svg>' : '<svg class="ic hi"><use href="#i-plane"/></svg>'}${esc(trip.name)}</b>
       <span class="sub">${boat ? `コア ${(trip.core || trip.members).length}人・定員 ${trip.capacity}人` : `参加 ${trip.members.length}人`}</span>
       <div class="spacer"></div>
       <button class="t-btn" onclick="openTripSettings('${trip.id}')">参加者・設定</button>
@@ -1544,7 +1558,7 @@ function renderCalendar(){
         `<span class="dot" style="background:${trip ? intentDef(state.genre, r.intent).color : memberColor(r.member_id)}"></span>`).join('')}${
         oth.length > MAX_DOTS ? `<span class="more">+${oth.length - MAX_DOTS}</span>` : ''}</div>`;
     }
-    const noteMark = my && my.note ? '<span class="note-mark">📝</span>' : '';
+    const noteMark = my && my.note ? '<span class="note-mark"><svg class="ic" style="width:10px;height:10px;stroke-width:2.5"><use href="#i-memo"/></svg></span>' : '';
     cells.push(`<div class="${cls.join(' ')}" data-date="${ds}" ${style ? `style="${style}"` : ''}>
       <span class="num">${d}</span>${noteMark}${dots}</div>`);
   }
@@ -1701,6 +1715,7 @@ function swipeGenre(dir){
 function applyStrokeToCell(cell, ds){
   if (stroke.days.has(ds)) return;
   stroke.days.add(ds);
+  cell.classList.remove('pop'); void cell.offsetWidth; cell.classList.add('pop');
   // 見た目を即時反映
   if (stroke.mode === 'paint') {
     const idef = intentDef(state.genre, state.paint);
@@ -1753,7 +1768,9 @@ async function commitStroke(){
     await reloadCalendar();
     return;
   }
-  toast(state.paint === 'went' ? (stroke.mode === 'paint' ? '「行った」を記録しました' : '記録を取り消しました') : '保存しました');
+  const n = state.paint === 'went' ? past.length : (stroke.mode === 'paint' ? future.length : dates.length);
+  toast(state.paint === 'went' ? (stroke.mode === 'paint' ? `${n}日を「行った」に記録しました` : `${n}日の記録を取り消しました`)
+        : stroke.mode === 'paint' ? `${n}日分を登録しました` : `${n}日分を消しました`);
   await loadMonth();
   renderCalendar();
   if (stroke.mode === 'paint' && state.paint !== 'went') {
@@ -1821,7 +1838,7 @@ function openDaySheet(ds, genre){
         <div style="flex:1">
           <div>${nameLink(r.member_id)}${isMe ? ' <span class="sub">(自分)</span>' : ''}</div>
           <div style="margin-top:4px"><span class="intent-tag" style="background:${idef.color}; color:${textOn(idef)}">${idef.label}</span></div>
-          ${r.note ? `<div class="sub" style="margin-top:6px">📝 ${esc(r.note)}</div>` : ''}
+          ${r.note ? `<div class="sub" style="margin-top:6px"><svg class="ic hi" style="width:14px;height:14px;margin-right:3px"><use href="#i-memo"/></svg>${esc(r.note)}</div>` : ''}
         </div>
         ${isMe ? `<button style="color:var(--accent); font-weight:600; min-height:44px"
             onclick="openMemoSheet('${genre}', ['${ds}'])">メモ</button>` : ''}
@@ -1861,8 +1878,8 @@ function openTripCreate(){
     <input class="field" id="trip-name" placeholder="名前(例: バリ 12月)" maxlength="30" style="margin:6px 0 12px">
     <div class="sub" style="margin-bottom:4px">種類</div>
     <div class="rc-opt" style="margin-top:0">
-      <button type="button" id="kind-flex" class="on" onclick="setTripKind('flex')">✈️ 日程あわせ<br><span class="sub" style="font-weight:400">みんなで行ける日を探す</span></button>
-      <button type="button" id="kind-boat" onclick="setTripKind('boat')">🚤 定員あり<br><span class="sub" style="font-weight:400">コアで決めて募集する</span></button>
+      <button type="button" id="kind-flex" class="on" onclick="setTripKind('flex')"><svg class="ic hi"><use href="#i-plane"/></svg>日程あわせ<br><span class="sub" style="font-weight:400">みんなで行ける日を探す</span></button>
+      <button type="button" id="kind-boat" onclick="setTripKind('boat')"><svg class="ic hi"><use href="#i-boat"/></svg>定員あり<br><span class="sub" style="font-weight:400">コアで決めて募集する</span></button>
     </div>
     <div id="cap-row" class="hidden" style="margin:6px 0 10px">
       <label class="sub">定員(人)</label>
@@ -1912,7 +1929,7 @@ function openTripSettings(id){
         <span class="avatar" style="background:${memberColor(mid)}; width:32px; height:32px; font-size:.9rem">${esc(memberName(mid)[0])}</span>
         <span>${esc(memberName(mid))}${mid === trip.created_by ? ' <span class="sub">(作成者)</span>' : ''}</span></div>`).join('');
   openSheet(`
-    <h2>✈️ ${esc(trip.name)}</h2>
+    <h2><svg class="ic hi"><use href="#i-plane"/></svg>${esc(trip.name)}</h2>
     ${isOwner ? `
       <div class="sub" style="margin-bottom:4px">名前</div>
       <div class="row" style="margin-bottom:12px">
@@ -2135,10 +2152,10 @@ function tripOfPage(){ return tripById(state.tripPageId); }
 function renderTripPageHead(){
   const t = tripOfPage(); if (!t) return;
   $('trip-page-head').innerHTML = `
-    <h1 style="margin-bottom:4px">${t.kind === 'boat' ? '🚤' : '✈️'} ${esc(t.name)}</h1>
+    <h1 style="margin-bottom:4px">${t.kind === 'boat' ? '<svg class="ic hi"><use href="#i-boat"/></svg>' : '<svg class="ic hi"><use href="#i-plane"/></svg>'}${esc(t.name)}</h1>
     <div><span class="t-confirmed" style="display:inline-block; background:#6E4FBF; color:#fff; border-radius:8px; padding:3px 10px; font-weight:700">
       ✅ ${rangeLabel([t.confirmed_start, t.confirmed_end])}</span></div>
-    ${t.kind === 'boat' ? `<div class="sub" style="margin-top:6px">🚤 定員 ${t.capacity}人・行く ${t.going.length}人</div>` : ''}
+    ${t.kind === 'boat' ? `<div class="sub" style="margin-top:6px">定員 ${t.capacity}人・行く ${t.going.length}人</div>` : ''}
     <div style="display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 14px">
       ${(t.kind === 'boat' ? t.going : t.members).map(id => `<button class="row" style="gap:4px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:3px 10px 3px 3px; font-size:.85rem" onclick="openProfile('${id}')">
         <span class="avatar" style="background:${memberColor(id)}; width:24px; height:24px; font-size:.7rem">${esc(rawName(id)[0])}</span>${esc(memberName(id))}</button>`).join('')}
@@ -2207,7 +2224,7 @@ function renderTripPosts(){
         <div class="row" style="gap:6px"><span style="font-size:.9rem">${nameLink(p.member_id)}</span>
           <span class="sub" style="font-size:.75rem">${fmtDateTime(p.created_at)}</span>
           <div class="spacer"></div>
-          ${mine || canModerate ? `<button class="sub" style="min-height:32px; min-width:32px" onclick="deletePost('${p.id}')">🗑</button>` : ''}</div>
+          ${mine || canModerate ? `<button class="sub" style="min-height:32px; min-width:32px" onclick="deletePost('${p.id}')" title="削除"><svg class="ic hi" style="margin:0;width:18px;height:18px"><use href="#i-trash"/></svg></button>` : ''}</div>
         <div class="body">${esc(p.body)}</div>
       </div></div>`;
   }).join('') : '<p class="sub">まだ書き込みはありません。最初のひとことをどうぞ!</p>';
@@ -2270,7 +2287,7 @@ async function openRecruitManage(id){
       <option value="waitlist" ${r.result === 'waitlist' ? 'selected' : ''}>キャンセル待ち</option>
     </select>`;
   openSheet(`
-    <h2>📣 募集の管理</h2>
+    <h2><svg class="ic hi"><use href="#i-mega"/></svg>募集の管理</h2>
     <p class="sub">🚤 ${esc(trip.name)} ・ 定員 ${trip.capacity}人 ・ 行く ${trip.going.length}人 ・ <b>残り ${remaining}枠</b></p>
 
     <div class="sub" style="margin:14px 0 4px"><b>① コアメンバーで行く人</b>(チェックを外すと枠が空きます)</div>
@@ -2312,7 +2329,7 @@ async function openRecruitManage(id){
       <div class="rc-row">
         <span class="avatar" style="background:${memberColor(r.member_id)}; width:32px; height:32px; font-size:.9rem">${esc(r.name[0])}</span>
         <div style="flex:1; min-width:0"><b>${esc(r.name)}</b> ${rcStatusTag(r.status)}
-          ${r.comment ? `<div class="sub" style="font-size:.78rem">💬 ${esc(r.comment)}</div>` : ''}
+          ${r.comment ? `<div class="sub" style="font-size:.78rem"><svg class="ic hi" style="width:14px;height:14px;margin-right:3px"><use href="#i-chat"/></svg>${esc(r.comment)}</div>` : ''}
           ${r.result === 'waitlist' ? `<div class="sub" style="font-size:.78rem">キャンセル待ち ${r.waitlist_order}番目</div>` : ''}</div>
         ${resultSel(r)}
       </div>`).join('')
@@ -2382,7 +2399,7 @@ async function openRecruitPage(id){
       ? `<div class="t-line"><span class="rc-status" style="background:#E0A62B">キャンセル待ち ${r.waitlist_order}番目</span><p class="sub" style="margin-top:6px">枠が空いたら主催者から連絡があります。</p></div>`
       : '';
   $('recruit-body').innerHTML = `
-    <h1 style="margin-bottom:4px">📣 ${esc(r.name)}</h1>
+    <h1 style="margin-bottom:4px"><svg class="ic hi"><use href="#i-mega"/></svg>${esc(r.name)}</h1>
     <div class="card">
       <div><b>日程</b> ${rangeLabel([r.confirmed_start, r.confirmed_end])}</div>
       <div style="margin-top:6px"><b>残り枠</b> ${Math.max(0, r.remaining)} / 定員 ${r.capacity}人</div>
@@ -2390,7 +2407,7 @@ async function openRecruitPage(id){
       ${!r.recruit_open ? '<div class="sub" style="margin-top:6px">この募集は締め切られました</div>' : ''}
       ${result}
     </div>
-    ${r.recruit_note ? `<div class="card"><h2>📝 主催者からの案内</h2><div class="notes-body">${esc(r.recruit_note)}</div></div>` : ''}
+    ${r.recruit_note ? `<div class="card"><h2><svg class="ic hi"><use href="#i-memo"/></svg>主催者からの案内</h2><div class="notes-body">${esc(r.recruit_note)}</div></div>` : ''}
     <div class="card">
       <h2>あなたの回答</h2>
       <div class="rc-opt">
@@ -2497,7 +2514,7 @@ async function renderNotify(){
       <button class="btn secondary" style="margin-top:8px" onclick="sendTestNotification()">テスト通知を送る(1分以内に届きます)</button>`;
   } else {
     head = `<p class="sub">仲間が予定を塗ったり書き込んだりしたら、アイコンの数字と通知で知らせます。</p>
-      <button class="btn" onclick="enablePush()">🔔 この端末で通知をオンにする</button>`;
+      <button class="btn" onclick="enablePush()">この端末で通知をオンにする</button>`;
   }
   const others = state.pushDevices.filter(d => !state.pushSub || d.endpoint !== state.pushSub.endpoint);
   const devList = others.length ? `<p class="sub" style="margin-top:8px">他に登録中の端末: ${others.map(d => esc(d.device || '端末')).join('、')}</p>` : '';
@@ -2672,11 +2689,13 @@ async function renderSurfStats(){
       <div><span class="sub">海外</span><b>${data.abroad}</b></div>
       <div><span class="sub">トリップ</span><b>${data.trip}</b></div>
     </div>
-    <p class="sub" style="margin-top:10px; font-size:.78rem">
-      「行く」で塗った日と、確定したトリップの日は、日付が過ぎると自動で「行った」になります(同じ日は1日として数えます)。<br>
-      行かなかった日はカレンダーで消しゴム、予定に入れていなかった日は「✓ 行った」で塗って直せます。
-      ${data.last_date ? `<br>最後に行った日: ${fmtDate(data.last_date)}` : ''}</p>`;
+    ${data.last_date ? `<p class="sub" style="margin-top:10px; font-size:.8rem">最後に行った日: ${fmtDate(data.last_date)}</p>` : ''}
+    <div id="surf-note" class="sub hidden" style="margin-top:10px; font-size:.78rem; background:var(--bg); border-radius:10px; padding:10px 12px">
+      「行く」にした日と、確定したトリップの日は、日付が過ぎると自動で「行った」になります(同じ日は1日として数えます)。<br>
+      行かなかった日はカレンダーで消しゴム、予定に入れていなかった日は「✓ 行った」を選んで過去の日をなぞると直せます。</div>`;
 }
+
+function toggleEl(id){ $(id).classList.toggle('hidden'); }
 
 /* ---------- 行った日数ランキング ---------- */
 let rankScope = 'year';
@@ -2738,7 +2757,7 @@ async function renderNakama(){
   const allShared = others.every(m => state.sharesTo.has(m.id));
   $('nakama-list').innerHTML = `
     <div class="row" style="padding:4px 4px 10px; border-bottom:1px solid var(--line)">
-      <span class="sub" style="flex:1">見せる=自分の予定を見せる相手<br>表示=カレンダーに重ねる人</span>
+      <span class="sub" style="flex:1">見せる=自分の予定を見せる相手<br>見たい=その人の予定をカレンダーに重ねる</span>
       <button class="btn secondary" style="width:auto; min-height:40px; padding:0 12px; font-size:.85rem"
         onclick="shareAll(${allShared ? 'false' : 'true'})">${allShared ? '全員に見せるのをやめる' : '全員に見せる'}</button>
     </div>` + others.map(m => {
@@ -2761,7 +2780,7 @@ async function renderNakama(){
       <label class="toggle-col ${see ? '' : 'disabled'}">
         <input type="checkbox" class="check" ${see && state.follows.has(m.id) ? 'checked' : ''} ${see ? '' : 'disabled'}
           onchange="toggleFollow('${m.id}', this.checked)">
-        <span class="sub">表示</span>
+        <span class="sub">見たい</span>
       </label>
     </div>`;
   }).join('');
@@ -2857,7 +2876,7 @@ async function openMemberDetail(id){
       return `<div class="mylist-day">
         <span style="min-width:74px">${fmtDate(r.date)}</span>
         <span class="intent-tag" style="background:${idef.color}; color:${textOn(idef)}">${idef.label}</span>
-        ${r.note ? `<span class="sub" style="flex:1">📝${esc(r.note)}</span>` : ''}
+        ${r.note ? `<span class="sub" style="flex:1"><svg class="ic hi" style="width:14px;height:14px;margin-right:3px"><use href="#i-memo"/></svg>${esc(r.note)}</span>` : ''}
       </div>`;
     }).join('') + '</div>';
   }
@@ -2888,7 +2907,7 @@ async function renderJibun(){
         <span style="flex:1"><b>${esc(m.name)}</b>${m.is_admin ? ' <span class="sub">(管理者)</span>' : ''}</span>
         <button style="color:var(--accent); min-height:44px; font-size:.85rem"
           onclick="adminResetPin('${m.id}')">PINリセット</button>
-        ${m.id !== state.me.id ? `<button class="del-btn" onclick="adminDeleteConfirm('${m.id}')">🗑</button>` : ''}
+        ${m.id !== state.me.id ? `<button class="del-btn" onclick="adminDeleteConfirm('${m.id}')" title="削除"><svg class="ic hi" style="margin:0"><use href="#i-trash"/></svg></button>` : ''}
       </div>`).join('');
   } else {
     $('admin-card').classList.add('hidden');
