@@ -806,7 +806,7 @@ async function refreshSocial(){
     sb.from('members').select('id,name,is_admin').order('name'),
     sb.from('follows').select('followee_id'),
     sb.from('last_seen').select('followee_id,seen_at'),
-    sb.from('trips').select('id,name,created_by,created_at,confirmed_start,confirmed_end,notes,notes_updated_at,notes_updated_by,kind,capacity,recruit_open,recruit_deadline').order('created_at'),
+    sb.from('trips').select('id,name,created_by,created_at,confirmed_start,confirmed_end,notes,notes_updated_at,notes_updated_by,kind,capacity,recruit_open,recruit_deadline,recruit_note').order('created_at'),
     sb.from('trip_members').select('trip_id,member_id,role,going'),
     sb.from('shares').select('owner_id,viewer_id'),
     sb.rpc('visible_activity'),
@@ -1779,7 +1779,15 @@ async function openRecruitManage(id){
     </div>
     <button class="btn secondary" style="margin-top:8px" onclick="saveRecruits('${id}')">②を保存</button>
 
-    <div class="sub" style="margin:18px 0 4px"><b>③ 募集の開始と回答期限</b></div>
+    <div class="sub" style="margin:18px 0 4px"><b>③ 募集の案内・回答期限・開始</b></div>
+    <label class="sub">募集の案内文(声をかけた人の募集ページに表示。詳細・費用・持ち物など)</label>
+    <textarea class="field" id="rc-note" rows="5" maxlength="3000" style="margin:4px 0 6px"
+      placeholder="例)
+メンタワイ ボートトリップ 7泊8日
+費用: 約○○万円(航空券別)
+出発: 成田 → パダン
+持ち物: ボード2本まで">${esc(trip.recruit_note || '')}</textarea>
+    <button class="btn secondary" style="margin-bottom:12px" onclick="saveRecruitNote('${id}')">案内文を保存</button>
     <label class="sub">回答期限(任意)</label>
     <input class="field" type="date" id="rc-deadline" value="${trip.recruit_deadline || ''}" style="margin:4px 0 8px">
     ${trip.recruit_open
@@ -1816,7 +1824,14 @@ async function saveRecruits(id){
   if (error) { toast('保存に失敗しました', true); return; }
   toast('声をかける人を保存しました'); await openRecruitManage(id);
 }
+async function saveRecruitNote(id){
+  const { error } = await sb.rpc('set_recruit_note', { p_trip: id, p_note: $('rc-note').value });
+  if (error) { toast('保存に失敗しました', true); return; }
+  toast('案内文を保存しました'); await refreshSocial();
+}
 async function openRecruit(id){
+  // 開始・更新のときは案内文も一緒に保存
+  await sb.rpc('set_recruit_note', { p_trip: id, p_note: $('rc-note').value });
   const dl = $('rc-deadline').value || null;
   const { error } = await sb.rpc('open_recruit', { p_trip: id, p_deadline: dl });
   if (error) { toast((error.message || '').includes('期限') ? '回答期限は今日以降にしてください' : '開始できませんでした', true); return; }
@@ -1866,6 +1881,7 @@ async function openRecruitPage(id){
       ${!r.recruit_open ? '<div class="sub" style="margin-top:6px">この募集は締め切られました</div>' : ''}
       ${result}
     </div>
+    ${r.recruit_note ? `<div class="card"><h2>📝 主催者からの案内</h2><div class="notes-body">${esc(r.recruit_note)}</div></div>` : ''}
     <div class="card">
       <h2>あなたの回答</h2>
       <div class="rc-opt">
