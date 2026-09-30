@@ -179,6 +179,19 @@ h2{font-size:1.05rem; margin:0 0 10px;}
   width:24px; height:24px; display:flex; align-items:center; justify-content:center;}
 .day.painted .num{color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.25);}
 .day.painted-light .num{color:var(--text); text-shadow:none;}
+/* 行った(過去の日) */
+.day.went{opacity:1 !important;}
+.day.went::before{content:'✓'; position:absolute; top:1px; right:4px; font-size:.7rem; color:#fff; font-weight:800; z-index:1;}
+.chip.chip-went{border:2.5px solid transparent; opacity:.7;}
+.chip.chip-went.selected{opacity:1;}
+/* 募集 */
+.rc-status{display:inline-block; border-radius:8px; padding:2px 8px; font-size:.75rem; font-weight:700; color:#fff;}
+.rc-opt{display:flex; gap:6px; margin:8px 0;}
+.rc-opt button{flex:1; min-height:48px; border-radius:12px; border:2px solid var(--line); background:#fff; font-weight:600; font-size:.85rem;}
+.rc-opt button.on{border-color:#6E4FBF; background:#EEE9F8; color:#4B3A85;}
+.rc-row{display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--line);}
+.rc-row:last-child{border-bottom:none;}
+.rc-row select{min-height:40px; border-radius:10px; border:1.5px solid var(--line); padding:0 6px; background:#fff;}
 .day.painted-light .dots .more{color:var(--text);}
 .chip.chip-go{font-weight:800;}
 .day .note-mark{position:absolute; top:3px; right:4px; font-size:.6rem; z-index:1;}
@@ -211,7 +224,7 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 .avatar{width:38px; height:38px; border-radius:50%; color:#fff; font-weight:700;
   display:flex; align-items:center; justify-content:center; flex-shrink:0;}
 
-/* ================= 仲間・じぶん ================= */
+/* ================= 仲間・自分 ================= */
 .member-row{display:flex; align-items:center; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line);}
 .member-row:last-child{border-bottom:none;}
 .member-name-btn{display:flex; align-items:center; gap:10px; flex:1; text-align:left; min-height:44px;}
@@ -245,7 +258,7 @@ h2{font-size:1.05rem; margin:0 0 10px;}
   </div>
   <div id="login-step-name">
     <div class="card">
-      <h2>じぶんの名前を入れてね</h2>
+      <h2>自分の名前を入れてね</h2>
       <input class="field" id="login-name" placeholder="登録した名前" maxlength="20"
         autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
       <button class="btn" style="margin-top:12px" onclick="goToPin()">次へ</button>
@@ -330,6 +343,12 @@ h2{font-size:1.05rem; margin:0 0 10px;}
     </div>
   </div>
 
+  <!-- 募集ページ(声をかけられた人用) -->
+  <div id="view-recruit" class="screen hidden">
+    <button style="color:#6E4FBF; font-weight:600; min-height:44px" onclick="closeRecruitPage()">← カレンダーへ</button>
+    <div id="recruit-body"></div>
+  </div>
+
   <!-- 仲間の詳細 -->
   <div id="view-member-detail" class="screen hidden">
     <button style="color:var(--accent); font-weight:600; min-height:44px" onclick="showTab('nakama')">← 仲間一覧へ</button>
@@ -337,9 +356,9 @@ h2{font-size:1.05rem; margin:0 0 10px;}
     <div id="md-body"></div>
   </div>
 
-  <!-- じぶん -->
+  <!-- 自分 -->
   <div id="view-jibun" class="screen hidden">
-    <h1>じぶん</h1>
+    <h1>自分</h1>
     <div class="card">
       <div class="row"><h2 id="my-name" style="margin:0"></h2><div class="spacer"></div>
         <span class="sub" id="my-role"></span></div>
@@ -349,10 +368,6 @@ h2{font-size:1.05rem; margin:0 0 10px;}
     <div class="card" id="surf-record">
       <h2>🏄 サーフィン記録</h2>
       <div id="surf-stats"><p class="sub">読み込み中…</p></div>
-    </div>
-    <div class="card">
-      <h2>じぶんの予定</h2>
-      <div id="my-schedule"></div>
     </div>
     <div class="card hidden" id="admin-card">
       <h2>管理者メニュー</h2>
@@ -375,7 +390,7 @@ h2{font-size:1.05rem; margin:0 0 10px;}
   <div id="tabbar">
     <button id="tab-cal" onclick="showTab('cal')"><span class="ticon">📅</span>カレンダー<span id="cal-dot" class="reddot hidden"></span></button>
     <button id="tab-nakama" onclick="showTab('nakama')"><span class="ticon">🏄</span>仲間<span id="nakama-dot" class="reddot hidden"></span></button>
-    <button id="tab-jibun" onclick="showTab('jibun')"><span class="ticon">👤</span>じぶん</button>
+    <button id="tab-jibun" onclick="showTab('jibun')"><span class="ticon">👤</span>自分</button>
   </div>
 </div>
 
@@ -437,10 +452,20 @@ const normIntent = (k) => LEGACY_INTENTS[k] || k;
 const TRIP_DEF = {
   label: 'トリップ', accent: '#6E4FBF', accentWeak: '#EEE9F8',
   intents: [
-    { key: 'free',   label: '空いてる',         color: '#2E9E5B' },
-    { key: 'adjust', label: '調整すれば行ける', color: '#E0A62B' },
-    { key: 'no',     label: '行けない',         color: '#9AA7AE' },
+    { key: 'free',   label: '行ける',   color: '#2E9E5B' },
+    { key: 'adjust', label: '要調整',   color: '#E0A62B' },
+    { key: 'no',     label: '行けない', color: '#9AA7AE' },
   ],
+};
+/* 「行った」(過去の日だけに塗れる)。ジャンルごとの色 */
+const WENT_COLORS = { sea: '#2B4F7A', pool: '#1F6B5C', abroad: '#7A4A20', trip: '#4B3A85' };
+const WENT_LABEL = '✓ 行った';
+const RECRUIT_STATUS = {
+  invited:  { label: '未回答',       color: '#9AA7AE' },
+  go:       { label: '行く',         color: '#2E9E5B' },
+  positive: { label: '前向きに検討', color: '#3E86C6' },
+  maybe:    { label: '様子見',       color: '#E0A62B' },
+  no:       { label: '行けない',     color: '#9AA7AE' },
 };
 const isTrip = (g) => typeof g === 'string' && g.startsWith('trip:');
 const tripIdOf = (g) => g.slice(5);
@@ -451,6 +476,7 @@ function genreDef(g){
   return INTENTS[g];
 }
 function intentDef(genre, key){
+  if (key === 'went') return { key: 'went', label: WENT_LABEL, color: WENT_COLORS[isTrip(genre) ? 'trip' : genre] || '#444' };
   key = normIntent(key);
   return (genreDef(genre)?.intents || []).find(i => i.key === key)
       || { key, label: key, color: '#9AA7AE' };
@@ -491,6 +517,9 @@ const state = {
   trips: [],                // 自分が参加しているトリップ [{id,name,created_by,members:[id]}]
   tripRows: [],             // 表示中トリップの回答 全行(全期間)
   tripUnread: {},           // trip_id -> 掲示板の未読数
+  monthLog: [],             // 表示月の自分のサーフィン記録(行った/行かなかった)
+  recruits: [],             // 自分が声をかけられている募集
+  recruitPageId: null,
   tripPageId: null,         // 開いているトリップページ
   tripPosts: [],
   members: [],              // 全メンバー
@@ -718,7 +747,7 @@ async function submitPin(){
 function offerFirstPinChange(){
   openModal(`
     <h2>PINを変えますか?</h2>
-    <p class="sub">最初のPINのままでも使えますが、じぶんだけのPINに変えておくと安心です。あとから「じぶん」タブでも変えられます。</p>
+    <p class="sub">最初のPINのままでも使えますが、自分だけのPINに変えておくと安心です。あとから「自分」タブでも変えられます。</p>
     <button class="btn" onclick="closeModal(); openPinChange('first')">変える</button>
     <button class="btn secondary" onclick="skipPinPrompt()">今はこのまま</button>
   `);
@@ -777,8 +806,8 @@ async function refreshSocial(){
     sb.from('members').select('id,name,is_admin').order('name'),
     sb.from('follows').select('followee_id'),
     sb.from('last_seen').select('followee_id,seen_at'),
-    sb.from('trips').select('id,name,created_by,created_at,confirmed_start,confirmed_end,notes,notes_updated_at,notes_updated_by').order('created_at'),
-    sb.from('trip_members').select('trip_id,member_id'),
+    sb.from('trips').select('id,name,created_by,created_at,confirmed_start,confirmed_end,notes,notes_updated_at,notes_updated_by,kind,capacity,recruit_open,recruit_deadline').order('created_at'),
+    sb.from('trip_members').select('trip_id,member_id,role,going'),
     sb.from('shares').select('owner_id,viewer_id'),
     sb.rpc('visible_activity'),
   ]);
@@ -792,8 +821,17 @@ async function refreshSocial(){
   state.follows = new Set((follows || []).map(f => f.followee_id));
   state.lastSeen = {};
   (seen || []).forEach(r => { state.lastSeen[r.followee_id] = r.seen_at; });
-  state.trips = (trips || []).map(t => ({
-    ...t, members: (tms || []).filter(m => m.trip_id === t.id).map(m => m.member_id) }));
+  state.trips = (trips || []).map(t => {
+    const rows = (tms || []).filter(m => m.trip_id === t.id);
+    return { ...t,
+      members: rows.map(m => m.member_id),                                   // 全員(コア+募集で確定)
+      core: rows.filter(m => (m.role || 'core') === 'core').map(m => m.member_id),
+      going: rows.filter(m => m.going !== false).map(m => m.member_id),      // 実際に行く人
+      myRole: (rows.find(m => m.member_id === state.me.id) || {}).role || 'core',
+    };
+  });
+  const { data: rc } = await sb.rpc('my_recruits');
+  state.recruits = rc || [];
   await loadTripUnread();
   // 表示中のトリップから外された/消された場合は海に戻す
   if (isTrip(state.genre) && !currentTrip()) { state.genre = 'sea'; state.paint = null; setAccent(); }
@@ -811,22 +849,33 @@ function visibleMemberIds(){
 
 async function loadMonth(){
   // トリップは件数が少ないので全期間をまとめて読む(上の要約で月をまたいで使う)
-  if (isTrip(state.genre)) {
-    const { data, error } = await sb.from('trip_availability')
-      .select('member_id,date,intent,note').eq('trip_id', tripIdOf(state.genre));
-    if (error) { toast('回答の読み込みに失敗しました', true); return; }
-    state.tripRows = data || [];
-    return;
-  }
   const first = new Date(state.calYear, state.calMonth, 1);
   const last  = new Date(state.calYear, state.calMonth + 1, 0);
-  let q = sb.from('availability')
-    .select('member_id,genre,date,intent,note')
-    .gte('date', ymd(first)).lte('date', ymd(last));
-  q = q.in('member_id', visibleMemberIds());
-  const { data, error } = await q;
+  if (isTrip(state.genre)) {
+    const [{ data, error }, { data: log }] = await Promise.all([
+      sb.from('trip_availability').select('member_id,date,intent,note').eq('trip_id', tripIdOf(state.genre)),
+      sb.from('surf_log').select('date,source,went,trip_id').eq('source', 'trip').eq('trip_id', tripIdOf(state.genre)),
+    ]);
+    if (error) { toast('回答の読み込みに失敗しました', true); return; }
+    state.tripRows = data || [];
+    state.monthLog = log || [];
+    return;
+  }
+  const [{ data, error }, { data: log }] = await Promise.all([
+    sb.from('availability').select('member_id,genre,date,intent,note')
+      .gte('date', ymd(first)).lte('date', ymd(last)).in('member_id', visibleMemberIds()),
+    sb.from('surf_log').select('date,source,went').gte('date', ymd(first)).lte('date', ymd(last)),
+  ]);
   if (error) { toast('予定の読み込みに失敗しました', true); return; }
   state.monthRows = data || [];
+  state.monthLog = log || [];
+}
+/* 自分の「行った」記録: date -> true(行った) / false(行かなかった) */
+function wentMap(){
+  const m = {};
+  const src = isTrip(state.genre) ? 'trip' : state.genre;
+  for (const r of state.monthLog) if (r.source === src) m[r.date] = !!r.went;
+  return m;
 }
 
 /* 表示月・現在ジャンルのデータを日付ごとに整理 */
@@ -858,14 +907,24 @@ function renderGenreTabs(){
     `<button class="${g === state.genre ? 'active' : ''}" onclick="setGenre('${g}')">${INTENTS[g].label}</button>`);
   const trips = state.trips.map(t =>
     `<button class="trip-tab ${state.genre === 'trip:' + t.id ? 'active' : ''}"
-       onclick="setGenre('trip:${t.id}')">${t.confirmed_start ? '✅' : '✈️'} ${esc(t.name)}${
+       onclick="setGenre('trip:${t.id}')">${t.confirmed_start ? '✅' : (t.kind === 'boat' ? '🚤' : '✈️')} ${esc(t.name)}${
        state.tripUnread[t.id] ? '<span class="tab-dot"></span>' : ''}</button>`);
+  // 声をかけられている募集(まだ参加者ではないもの)
+  const recruits = state.recruits.filter(r => !r.joined).map(r =>
+    `<button class="trip-tab ${state.recruitPageId === r.trip_id ? 'active' : ''}"
+       onclick="openRecruitPage('${r.trip_id}')">📣 ${esc(r.name)}${
+       r.my_status === 'invited' && r.recruit_open ? '<span class="tab-dot"></span>' : ''}</button>`);
   const add = `<button class="trip-add" title="トリップを作る" onclick="openTripCreate()">＋</button>`;
-  $('genre-tabs').innerHTML = [...base, ...trips, add].join('');
+  $('genre-tabs').innerHTML = [...base, ...trips, ...recruits, add].join('');
   const act = $('genre-tabs').querySelector('.active');
   if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 async function setGenre(g){
+  // 募集で確定して入った人には、調整のカレンダーは見せずにトリップページを開く
+  if (isTrip(g)) {
+    const t = tripById(tripIdOf(g));
+    if (t && t.myRole === 'joined' && t.confirmed_start) { await openTripPage(t.id); return; }
+  }
   state.genre = g;
   state.paint = null;
   setAccent();
@@ -879,11 +938,19 @@ function renderPalette(){
   let html = g.intents.map(i =>
     `<button class="chip ${state.paint === i.key ? 'selected' : ''} ${i.key === 'go' ? 'chip-go' : ''}"
        style="background:${i.color}; color:${textOn(i)}" onclick="setPaint('${i.key}')">${i.label}</button>`).join('');
+  // 「行った」: 過去の日に塗れる(トリップは確定後だけ)
+  const trip = currentTrip();
+  if (!trip || trip.confirmed_start) {
+    const w = intentDef(state.genre, 'went');
+    html += `<button class="chip chip-went ${state.paint === 'went' ? 'selected' : ''}"
+       style="background:${w.color}" onclick="setPaint('went')">${w.label}</button>`;
+  }
   html += `<button class="chip eraser ${state.paint === 'eraser' ? 'selected' : ''}"
        onclick="setPaint('eraser')">🧽 消しゴム</button>`;
   $('palette').innerHTML = html;
   $('paint-hint').textContent =
-    state.paint === 'eraser' ? '消したい日をなぞってね' :
+    state.paint === 'eraser' ? '消したい日をなぞってね(過去の日は「行かなかった」になります)' :
+    state.paint === 'went' ? '実際に行った日(過去)をなぞってね。もう一度なぞると取り消し' :
     state.paint ? `「${intentDef(state.genre, state.paint).label}」で塗るよ。日付をなぞってね` :
     '絵の具を選ぶと塗れるよ。今は見るモード(日付タップでみんなの予定)';
 }
@@ -912,15 +979,16 @@ function tripStats(trip){
   for (const r of state.tripRows) (byDate[r.date] = byDate[r.date] || {})[r.member_id] = r.intent;
   const t = todayStr();
   const allFree = [], allOk = [];
+  const core = trip.core || trip.members;   // 日程調整に参加するのはコアメンバー
   for (const [d, m] of Object.entries(byDate)) {
     if (d < t) continue;
-    const vals = trip.members.map(id => m[id]);
+    const vals = core.map(id => m[id]);
     if (vals.every(v => v === 'free')) allFree.push(d);
     else if (vals.every(v => v === 'free' || v === 'adjust')) allOk.push(d);
   }
   allFree.sort(); allOk.sort();
   const answered = new Set(state.tripRows.map(r => r.member_id));
-  const unanswered = trip.members.filter(id => !answered.has(id));
+  const unanswered = core.filter(id => !answered.has(id));
   return { allFree: new Set(allFree), allOk: new Set(allOk),
            freeRanges: toRanges(allFree), okRanges: toRanges(allOk), unanswered };
 }
@@ -939,8 +1007,18 @@ function renderTripSummary(trip, st){
   const ok = st.okRanges.length
     ? st.okRanges.map(r => `<span class="t-range ok${pick(r)}">☆ ${rangeLabel(r)}</span>`).join('') : '';
   const unread = state.tripUnread[trip.id] || 0;
+  const boat = trip.kind === 'boat';
+  const recruitBlock = boat && trip.confirmed_start ? `
+    <div class="t-line" style="background:#F7F5FC; border-radius:10px; padding:8px 10px; margin-top:8px">
+      <b>🚤 定員 ${trip.capacity}人</b> ・ 行く ${trip.going.length}人 ・ 残り ${Math.max(0, trip.capacity - trip.going.length)}枠<br>
+      <span class="sub">${trip.recruit_open
+        ? `募集中${trip.recruit_deadline ? `(回答期限 ${fmtDate(trip.recruit_deadline)}${trip.recruit_deadline < todayStr() ? '・期限切れ' : ''})` : ''}`
+        : '募集は始まっていません'}</span>
+      ${isCreator ? `<br><button class="btn secondary" style="margin-top:8px; color:#4B3A85; background:#EEE9F8" onclick="openRecruitManage('${trip.id}')">📣 募集の管理(声をかける・回答を見る・確定)</button>` : ''}
+    </div>` : '';
   const confirmedBlock = trip.confirmed_start ? `
     <div class="t-line"><span class="t-confirmed">✅ 確定 ${rangeLabel([trip.confirmed_start, trip.confirmed_end])}</span></div>
+    ${recruitBlock}
     <button class="btn" style="margin-top:10px; background:#6E4FBF" onclick="openTripPage('${trip.id}')">
       📋 トリップページ(しおり・掲示板)${unread ? `<span class="badge">${unread}</span>` : ''}</button>
     ${isCreator ? `<button class="t-btn" style="margin-top:4px" onclick="confirmUnconfirmTrip('${trip.id}')">確定を取り消す</button>` : ''}`
@@ -951,14 +1029,14 @@ function renderTripSummary(trip, st){
     ? `<div class="t-line sub">未回答: ${st.unanswered.map(memberName).map(esc).join('、')}</div>` : '';
   box.innerHTML = `
     <div class="row">
-      <b>✈️ ${esc(trip.name)}</b>
-      <span class="sub">参加 ${trip.members.length}人</span>
+      <b>${boat ? '🚤' : '✈️'} ${esc(trip.name)}</b>
+      <span class="sub">${boat ? `コア ${(trip.core || trip.members).length}人・定員 ${trip.capacity}人` : `参加 ${trip.members.length}人`}</span>
       <div class="spacer"></div>
       <button class="t-btn" onclick="openTripSettings('${trip.id}')">参加者・設定</button>
     </div>
     ${confirmedBlock}
-    <div class="t-line"><b>全員が空いてる日</b><br>${free}</div>
-    ${ok ? `<div class="t-line"><span class="sub">調整すれば全員OK</span><br>${ok}</div>` : ''}
+    <div class="t-line"><b>全員が行ける日</b><br>${free}</div>
+    ${ok ? `<div class="t-line"><span class="sub">要調整なら全員OK</span><br>${ok}</div>` : ''}
     ${un}
     <div class="t-line sub" style="font-size:.78rem">作成: ${esc(owner)}</div>`;
   box.classList.remove('hidden');
@@ -970,6 +1048,7 @@ function renderCalendar(){
   const trip = currentTrip();
   const st = trip ? tripStats(trip) : null;
   renderTripSummary(trip, st);
+  const wm = wentMap();
   const first = new Date(state.calYear, state.calMonth, 1);
   const daysInMonth = new Date(state.calYear, state.calMonth + 1, 0).getDate();
   const startDow = first.getDay();
@@ -989,7 +1068,11 @@ function renderCalendar(){
     if (isPast) cls.push('past');
     if (ds === tStr) cls.push('today');
     let style = '';
-    if (my) {
+    const went = wm[ds];   // true=行った / false=行かなかった / undefined=記録なし
+    if (isPast && went === true) {
+      cls.push('painted', 'went');
+      style = `background:${intentDef(state.genre, 'went').color}`;
+    } else if (my && !(isPast && went === false && normIntent(my.intent) === 'go')) {
       const idef = intentDef(state.genre, my.intent);
       cls.push('painted'); if (idef.light) cls.push('painted-light');
       style = `background:${idef.color}`;
@@ -1000,7 +1083,7 @@ function renderCalendar(){
       else if (st.allOk.has(ds)) cls.push('all-ok');
     }
     // 仲間の予定は人数分の色点で表示(10人まで。超えたら +n)
-    // 通常ジャンル: 人ごとの色 / トリップ: 回答(空いてる・調整・行けない)の色
+    // 通常ジャンル: 人ごとの色 / トリップ: 回答(行ける・要調整・行けない)の色
     let dots = '';
     if (oth.length) {
       const MAX_DOTS = 10;
@@ -1024,10 +1107,11 @@ function renderCalendar(){
   $('legend').innerHTML = g.intents.map(i =>
     `<span class="lg"><span class="sw" style="background:${i.color}"></span>${i.label}</span>`).join('')
     + (trip
-      ? `<span class="lg"><span style="color:#F2B01E">★</span>全員空いてる</span>
-         <span class="lg"><span style="color:#8E74D6">☆</span>調整すれば全員OK</span>
+      ? `<span class="lg"><span style="color:#F2B01E">★</span>全員行ける</span>
+         <span class="lg"><span style="color:#8E74D6">☆</span>要調整なら全員OK</span>
          <span class="lg"><span class="sw" style="background:#2E9E5B; border-radius:50%; width:8px; height:8px"></span>点=仲間の回答(タップで名前)</span>`
-      : `<span class="lg"><span class="sw" style="background:#5581C9; border-radius:50%; width:8px; height:8px"></span>仲間の予定(1人=1つ・タップで名前)</span>`);
+      : `<span class="lg"><span class="sw" style="background:#5581C9; border-radius:50%; width:8px; height:8px"></span>仲間の予定(1人=1つ・タップで名前)</span>`)
+    + `<span class="lg"><span class="sw" style="background:${intentDef(state.genre,'went').color}; color:#fff; font-size:.6rem; text-align:center; line-height:14px">✓</span>行った(過去の日・記録に入る)</span>`;
 }
 
 function moveMonth(diff){
@@ -1059,7 +1143,11 @@ const stroke = { active: false, mode: null, days: new Set(), startCell: null,
 function cellFromPoint(x, y){
   const el = document.elementFromPoint(x, y);
   const cell = el && el.closest ? el.closest('.day') : null;
-  if (!cell || !cell.dataset.date || cell.classList.contains('past')) return null;
+  if (!cell || !cell.dataset.date) return null;
+  const past = cell.classList.contains('past');
+  // 過去の日: 「行った」と消しゴムだけ / 「行った」は過去の日だけ
+  if (past && !(state.paint === 'went' || state.paint === 'eraser' || !state.paint)) return null;
+  if (!past && state.paint === 'went') return null;
   return cell;
 }
 
@@ -1080,13 +1168,15 @@ $('cal-grid').addEventListener('pointerdown', (e) => {
   stroke.startX = e.clientX; stroke.startY = e.clientY;
 
   if (state.paint === 'eraser') stroke.mode = 'erase';
+  else if (state.paint === 'went') stroke.mode = wentMap()[ds] === true ? 'erase' : 'paint';   // 行った→もう一度で取り消し
   else if (mine[ds] && normIntent(mine[ds].intent) === state.paint) stroke.mode = 'erase'; // 同じ絵の具→トグルで解除
   else stroke.mode = 'paint';
 
   applyStrokeToCell(cell, ds);
 
-  // 長押し(550ms・動かさない)→ メモ編集
+  // 長押し(550ms・動かさない)→ メモ編集(「行った」は対象外)
   clearTimeout(stroke.longTimer);
+  if (state.paint === 'went') return;
   stroke.longTimer = setTimeout(() => {
     if (stroke.active && !stroke.moved && stroke.days.size <= 1) {
       stroke.cancelled = true; stroke.active = false;
@@ -1127,9 +1217,10 @@ function applyStrokeToCell(cell, ds){
     const idef = intentDef(state.genre, state.paint);
     cell.classList.add('painted');
     cell.classList.toggle('painted-light', !!idef.light);
+    cell.classList.toggle('went', state.paint === 'went');
     cell.style.background = idef.color;
   } else {
-    cell.classList.remove('painted', 'painted-light');
+    cell.classList.remove('painted', 'painted-light', 'went');
     cell.style.background = '';
   }
 }
@@ -1138,17 +1229,31 @@ async function commitStroke(){
   const dates = [...stroke.days];
   const genre = state.genre;
   const tg = availTarget(genre);
+  const today = todayStr();
+  const past = dates.filter(d => d < today), future = dates.filter(d => d >= today);
+  const src = isTrip(genre) ? 'trip' : genre;
   let error = null;
-  if (stroke.mode === 'paint') {
+  if (state.paint === 'went') {
+    // 行った / 行かなかった(過去の日だけ)
+    ({ error } = stroke.mode === 'paint'
+      ? await sb.rpc('mark_went', { p_source: src, p_dates: past, p_trip: isTrip(genre) ? tripIdOf(genre) : null })
+      : await sb.rpc('unmark_went', { p_source: src, p_dates: past }));
+  } else if (stroke.mode === 'paint') {
     const { mine } = dayMap();
-    const rows = dates.map(d => ({
+    const rows = future.map(d => ({
       member_id: state.me.id, [tg.key]: tg.val, date: d, intent: state.paint,
       note: mine[d]?.note ?? null,      // 上書き時もメモは残す
     }));
-    ({ error } = await sb.from(tg.table).upsert(rows, { onConflict: tg.conflict }));
+    if (rows.length) ({ error } = await sb.from(tg.table).upsert(rows, { onConflict: tg.conflict }));
   } else {
-    ({ error } = await sb.from(tg.table).delete()
-      .eq('member_id', state.me.id).eq(tg.key, tg.val).in('date', dates));
+    // 消しゴム: 未来は予定を消す / 過去は「行かなかった」にして予定も消す
+    if (future.length) ({ error } = await sb.from(tg.table).delete()
+      .eq('member_id', state.me.id).eq(tg.key, tg.val).in('date', future));
+    if (!error && past.length) {
+      ({ error } = await sb.rpc('unmark_went', { p_source: src, p_dates: past }));
+      if (!error && !isTrip(genre)) await sb.from(tg.table).delete()
+        .eq('member_id', state.me.id).eq(tg.key, tg.val).in('date', past);
+    }
   }
   if (error) {
     console.error(error);
@@ -1156,10 +1261,10 @@ async function commitStroke(){
     await reloadCalendar();
     return;
   }
-  toast('保存しました');
+  toast(state.paint === 'went' ? (stroke.mode === 'paint' ? '「行った」を記録しました' : '記録を取り消しました') : '保存しました');
   await loadMonth();
   renderCalendar();
-  if (stroke.mode === 'paint') {
+  if (stroke.mode === 'paint' && state.paint !== 'went') {
     state.lastStroke = { genre, dates: dates.sort() };
     showBulkMemoBar();
   } else {
@@ -1222,7 +1327,7 @@ function openDaySheet(ds, genre){
       return `<div class="sheet-person">
         <div class="avatar" style="background:${memberColor(r.member_id)}">${esc((m?.name||'?')[0])}</div>
         <div style="flex:1">
-          <div><b>${esc(m?.name || '?')}</b>${isMe ? ' <span class="sub">(じぶん)</span>' : ''}</div>
+          <div><b>${esc(m?.name || '?')}</b>${isMe ? ' <span class="sub">(自分)</span>' : ''}</div>
           <div style="margin-top:4px"><span class="intent-tag" style="background:${idef.color}; color:${textOn(idef)}">${idef.label}</span></div>
           ${r.note ? `<div class="sub" style="margin-top:6px">📝 ${esc(r.note)}</div>` : ''}
         </div>
@@ -1232,7 +1337,7 @@ function openDaySheet(ds, genre){
     }).join('');
     list += unanswered.map(id => `<div class="sheet-person" style="opacity:.6">
         <div class="avatar" style="background:${memberColor(id)}">${esc(memberName(id)[0])}</div>
-        <div style="flex:1"><div><b>${esc(memberName(id))}</b>${id === state.me.id ? ' <span class="sub">(じぶん)</span>' : ''}</div>
+        <div style="flex:1"><div><b>${esc(memberName(id))}</b>${id === state.me.id ? ' <span class="sub">(自分)</span>' : ''}</div>
           <div class="sub" style="margin-top:4px">未回答</div></div>
       </div>`).join('');
   }
@@ -1261,25 +1366,45 @@ function checkedMemberIds(){
 function openTripCreate(){
   openSheet(`
     <h2>トリップの調整帳を作る</h2>
-    <p class="sub">参加者を選ぶと、その人たちにだけ表示されます。あなたは自動で参加者に入ります。</p>
     <input class="field" id="trip-name" placeholder="名前(例: バリ 12月)" maxlength="30" style="margin:6px 0 12px">
-    <div class="sub" style="margin-bottom:4px">参加者</div>
+    <div class="sub" style="margin-bottom:4px">種類</div>
+    <div class="rc-opt" style="margin-top:0">
+      <button type="button" id="kind-flex" class="on" onclick="setTripKind('flex')">✈️ 日程あわせ<br><span class="sub" style="font-weight:400">みんなで行ける日を探す</span></button>
+      <button type="button" id="kind-boat" onclick="setTripKind('boat')">🚤 定員あり<br><span class="sub" style="font-weight:400">コアで決めて募集する</span></button>
+    </div>
+    <div id="cap-row" class="hidden" style="margin:6px 0 10px">
+      <label class="sub">定員(人)</label>
+      <input class="field" id="trip-cap" type="number" inputmode="numeric" min="1" max="200" placeholder="例: 10">
+      <p class="sub" style="margin-top:6px">まず下で選んだ<b>コアメンバー</b>だけで日程を決めます。確定したあと、余った枠に声をかける人を選べます。声をかけられた人には、コアメンバーが誰かは見えません。</p>
+    </div>
+    <div class="sub" style="margin-bottom:4px" id="mem-label">参加者(あなたは自動で入ります)</div>
     <div style="max-height:40vh; overflow-y:auto">${memberChecklist(new Set(), state.me.id)}</div>
     <button class="btn" style="margin-top:14px" onclick="submitTripCreate()">作る</button>
     <button class="btn secondary" style="margin-top:8px" onclick="closeSheet()">やめる</button>
   `);
+  newTripKind = 'flex';
   setTimeout(() => $('trip-name').focus(), 100);
+}
+let newTripKind = 'flex';
+function setTripKind(k){
+  newTripKind = k;
+  $('kind-flex').classList.toggle('on', k === 'flex');
+  $('kind-boat').classList.toggle('on', k === 'boat');
+  $('cap-row').classList.toggle('hidden', k !== 'boat');
+  $('mem-label').textContent = k === 'boat' ? 'コアメンバー(あなたは自動で入ります)' : '参加者(あなたは自動で入ります)';
 }
 async function submitTripCreate(){
   const name = $('trip-name').value.trim();
   if (!name) { toast('名前を入れてください', true); return; }
+  const cap = parseInt($('trip-cap').value, 10);
+  if (newTripKind === 'boat' && !(cap >= 1)) { toast('定員を入れてください', true); return; }
   const ids = checkedMemberIds();
   spin(true);
-  const { data, error } = await sb.rpc('create_trip', { p_name: name, p_member_ids: ids });
+  const { data, error } = await sb.rpc('create_trip2', { p_name: name, p_member_ids: ids, p_kind: newTripKind, p_capacity: newTripKind === 'boat' ? cap : null });
   spin(false);
   if (error) { console.error(error); toast('作成に失敗しました', true); return; }
   closeSheet();
-  toast(`「${name}」を作りました。空いてる日を塗ってね`);
+  toast(`「${name}」を作りました。行ける日を塗ってね`);
   await refreshSocial();
   await setGenre('trip:' + data);
 }
@@ -1288,8 +1413,9 @@ function openTripSettings(id){
   const trip = tripById(id);
   if (!trip) return;
   const isOwner = trip.created_by === state.me.id || state.me.is_admin;
+  const boat = trip.kind === 'boat';
   const list = isOwner
-    ? memberChecklist(new Set(trip.members), trip.created_by)
+    ? memberChecklist(new Set(trip.core || trip.members), trip.created_by)
     : trip.members.map(mid => `<div class="trip-member-row">
         <span class="avatar" style="background:${memberColor(mid)}; width:32px; height:32px; font-size:.9rem">${esc(memberName(mid)[0])}</span>
         <span>${esc(memberName(mid))}${mid === trip.created_by ? ' <span class="sub">(作成者)</span>' : ''}</span></div>`).join('');
@@ -1301,7 +1427,12 @@ function openTripSettings(id){
         <input class="field" id="trip-rename" value="${esc(trip.name)}" maxlength="30">
         <button class="btn secondary" style="width:auto; padding:0 14px" onclick="submitTripRename('${id}')">変更</button>
       </div>
-      <div class="sub" style="margin-bottom:4px">参加者(作成者 ${esc(memberName(trip.created_by))} は常に含まれます)</div>
+      ${boat ? `<div class="sub" style="margin-bottom:4px">定員(人)</div>
+      <div class="row" style="margin-bottom:12px">
+        <input class="field" id="trip-cap-edit" type="number" inputmode="numeric" min="1" max="200" value="${trip.capacity || ''}">
+        <button class="btn secondary" style="width:auto; padding:0 14px" onclick="submitTripCapacity('${id}')">変更</button>
+      </div>` : ''}
+      <div class="sub" style="margin-bottom:4px">${boat ? 'コアメンバー' : '参加者'}(作成者 ${esc(memberName(trip.created_by))} は常に含まれます)</div>
       <div style="max-height:35vh; overflow-y:auto">${list}</div>
       <button class="btn" style="margin-top:14px" onclick="submitTripMembers('${id}')">参加者を保存</button>
       <button class="btn danger-outline" style="margin-top:10px" onclick="confirmTripDelete('${id}')">この調整帳を削除</button>`
@@ -1311,6 +1442,14 @@ function openTripSettings(id){
       <p class="sub" style="margin-top:10px">参加者の変更や削除は、作成者(${esc(memberName(trip.created_by))})だけができます。</p>`}
     <button class="btn secondary" style="margin-top:10px" onclick="closeSheet()">閉じる</button>
   `);
+}
+async function submitTripCapacity(id){
+  const cap = parseInt($('trip-cap-edit').value, 10);
+  if (!(cap >= 1)) { toast('定員は1人以上にしてください', true); return; }
+  const { error } = await sb.rpc('set_trip_capacity', { p_trip: id, p_capacity: cap });
+  if (error) { toast('変更に失敗しました', true); return; }
+  toast('定員を変更しました');
+  await refreshSocial(); renderCalendar();
 }
 async function submitTripRename(id){
   const name = $('trip-rename').value.trim();
@@ -1394,6 +1533,8 @@ async function showTab(tab){
   }
   $('view-member-detail').classList.add('hidden');
   $('view-trip').classList.add('hidden');
+  $('view-recruit').classList.add('hidden');
+  state.recruitPageId = null;
   stopPostPolling();
   hideBulkMemoBar();
   if (tab === 'nakama') await renderNakama();
@@ -1484,11 +1625,12 @@ function tripOfPage(){ return tripById(state.tripPageId); }
 function renderTripPageHead(){
   const t = tripOfPage(); if (!t) return;
   $('trip-page-head').innerHTML = `
-    <h1 style="margin-bottom:4px">✈️ ${esc(t.name)}</h1>
+    <h1 style="margin-bottom:4px">${t.kind === 'boat' ? '🚤' : '✈️'} ${esc(t.name)}</h1>
     <div><span class="t-confirmed" style="display:inline-block; background:#6E4FBF; color:#fff; border-radius:8px; padding:3px 10px; font-weight:700">
       ✅ ${rangeLabel([t.confirmed_start, t.confirmed_end])}</span></div>
+    ${t.kind === 'boat' ? `<div class="sub" style="margin-top:6px">🚤 定員 ${t.capacity}人・行く ${t.going.length}人</div>` : ''}
     <div style="display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 14px">
-      ${t.members.map(id => `<span class="row" style="gap:4px; background:#fff; border-radius:16px; padding:3px 10px 3px 3px; font-size:.85rem">
+      ${(t.kind === 'boat' ? t.going : t.members).map(id => `<span class="row" style="gap:4px; background:#fff; border-radius:16px; padding:3px 10px 3px 3px; font-size:.85rem">
         <span class="avatar" style="background:${memberColor(id)}; width:24px; height:24px; font-size:.7rem">${esc(memberName(id)[0])}</span>${esc(memberName(id))}</span>`).join('')}
     </div>`;
 }
@@ -1591,7 +1733,173 @@ function startPostPolling(){
 function stopPostPolling(){ if (postTimer) { clearInterval(postTimer); postTimer = null; } }
 
 /* =====================================================================
-   サーフィン記録(じぶんタブ)
+   募集(定員ありトリップ)
+===================================================================== */
+function rcStatusTag(st){
+  const d = RECRUIT_STATUS[st] || RECRUIT_STATUS.invited;
+  return `<span class="rc-status" style="background:${d.color}">${d.label}</span>`;
+}
+
+/* ---------- 主催者: 募集の管理 ---------- */
+async function openRecruitManage(id){
+  const trip = tripById(id); if (!trip) return;
+  spin(true);
+  const [{ data: resp }, { data: sum }] = await Promise.all([
+    sb.rpc('recruit_responses', { p_trip: id }), sb.rpc('recruit_summary', { p_trip: id })]);
+  spin(false);
+  const responses = resp || [];
+  const core = trip.core || trip.members;
+  const goingSet = new Set(trip.going);
+  const invitedSet = new Set(responses.map(r => r.member_id));
+  const candidates = state.members.filter(m => !core.includes(m.id));
+  const remaining = sum ? sum.remaining : Math.max(0, trip.capacity - trip.going.length);
+  const resultSel = (r) => `
+    <select onchange="this.dataset.dirty=1" data-mid="${r.member_id}" class="rc-result">
+      <option value="" ${!r.result ? 'selected' : ''}>未定</option>
+      <option value="confirmed" ${r.result === 'confirmed' ? 'selected' : ''}>確定</option>
+      <option value="waitlist" ${r.result === 'waitlist' ? 'selected' : ''}>キャンセル待ち</option>
+    </select>`;
+  openSheet(`
+    <h2>📣 募集の管理</h2>
+    <p class="sub">🚤 ${esc(trip.name)} ・ 定員 ${trip.capacity}人 ・ 行く ${trip.going.length}人 ・ <b>残り ${remaining}枠</b></p>
+
+    <div class="sub" style="margin:14px 0 4px"><b>① コアメンバーで行く人</b>(チェックを外すと枠が空きます)</div>
+    ${core.map(mid => `<label class="trip-member-row">
+      <input type="checkbox" class="check core-going" value="${mid}" ${goingSet.has(mid) ? 'checked' : ''}>
+      <span class="avatar" style="background:${memberColor(mid)}; width:32px; height:32px; font-size:.9rem">${esc(memberName(mid)[0])}</span>
+      <span>${esc(memberName(mid))}</span></label>`).join('')}
+    <button class="btn secondary" style="margin-top:8px" onclick="saveCoreGoing('${id}')">①を保存</button>
+
+    <div class="sub" style="margin:18px 0 4px"><b>② 声をかける人</b>(この人たちにだけ募集ページが見えます。コアメンバーが誰かは見えません)</div>
+    <div style="max-height:30vh; overflow-y:auto">
+      ${candidates.map(m => `<label class="trip-member-row">
+        <input type="checkbox" class="check rc-invite" value="${m.id}" ${invitedSet.has(m.id) ? 'checked' : ''}>
+        <span class="avatar" style="background:${memberColor(m.id)}; width:32px; height:32px; font-size:.9rem">${esc(m.name[0])}</span>
+        <span>${esc(m.name)}</span></label>`).join('') || '<p class="sub">声をかけられる人がいません</p>'}
+    </div>
+    <button class="btn secondary" style="margin-top:8px" onclick="saveRecruits('${id}')">②を保存</button>
+
+    <div class="sub" style="margin:18px 0 4px"><b>③ 募集の開始と回答期限</b></div>
+    <label class="sub">回答期限(任意)</label>
+    <input class="field" type="date" id="rc-deadline" value="${trip.recruit_deadline || ''}" style="margin:4px 0 8px">
+    ${trip.recruit_open
+      ? `<div class="row" style="gap:8px"><button class="btn" style="background:#6E4FBF" onclick="openRecruit('${id}')">期限を更新</button>
+         <button class="btn danger-outline" onclick="closeRecruit('${id}')">締め切る</button></div>
+         <p class="sub" style="margin-top:6px">募集中です${trip.recruit_deadline && trip.recruit_deadline < todayStr() ? '(期限を過ぎているので回答は止まっています。期限を延ばすと再開します)' : ''}</p>`
+      : `<button class="btn" style="background:#6E4FBF" onclick="openRecruit('${id}')">募集を開始する</button>
+         <p class="sub" style="margin-top:6px">開始すると、②の人に募集ページが表示されます</p>`}
+
+    <div class="sub" style="margin:18px 0 4px"><b>④ 回答と確定</b>${sum ? `(行く ${sum.go}・前向き ${sum.positive}・様子見 ${sum.maybe}・行けない ${sum.no}・未回答 ${sum.unanswered})` : ''}</div>
+    ${responses.length ? responses.map(r => `
+      <div class="rc-row">
+        <span class="avatar" style="background:${memberColor(r.member_id)}; width:32px; height:32px; font-size:.9rem">${esc(r.name[0])}</span>
+        <div style="flex:1; min-width:0"><b>${esc(r.name)}</b> ${rcStatusTag(r.status)}
+          ${r.comment ? `<div class="sub" style="font-size:.78rem">💬 ${esc(r.comment)}</div>` : ''}
+          ${r.result === 'waitlist' ? `<div class="sub" style="font-size:.78rem">キャンセル待ち ${r.waitlist_order}番目</div>` : ''}</div>
+        ${resultSel(r)}
+      </div>`).join('')
+      : '<p class="sub">まだ声をかけていません</p>'}
+    ${responses.length ? `<button class="btn" style="margin-top:10px; background:#6E4FBF" onclick="saveParticipants('${id}')">④ 確定・キャンセル待ちを保存</button>
+      <p class="sub" style="margin-top:6px">確定した人は参加者になり、トリップページ(しおり・掲示板)が使えます。キャンセル待ちは上から順に繰り上げてください。</p>` : ''}
+    <button class="btn secondary" style="margin-top:14px" onclick="closeSheet()">閉じる</button>
+  `);
+}
+async function saveCoreGoing(id){
+  const ids = [...document.querySelectorAll('.core-going:checked')].map(e => e.value);
+  const { error } = await sb.rpc('set_core_going', { p_trip: id, p_going: ids });
+  if (error) { toast('保存に失敗しました', true); return; }
+  toast('行く人を保存しました'); await refreshSocial(); renderCalendar(); await openRecruitManage(id);
+}
+async function saveRecruits(id){
+  const ids = [...document.querySelectorAll('.rc-invite:checked')].map(e => e.value);
+  const { error } = await sb.rpc('set_recruits', { p_trip: id, p_member_ids: ids });
+  if (error) { toast('保存に失敗しました', true); return; }
+  toast('声をかける人を保存しました'); await openRecruitManage(id);
+}
+async function openRecruit(id){
+  const dl = $('rc-deadline').value || null;
+  const { error } = await sb.rpc('open_recruit', { p_trip: id, p_deadline: dl });
+  if (error) { toast((error.message || '').includes('期限') ? '回答期限は今日以降にしてください' : '開始できませんでした', true); return; }
+  toast('募集を開始しました'); await refreshSocial(); renderCalendar(); await openRecruitManage(id);
+}
+async function closeRecruit(id){
+  const { error } = await sb.rpc('close_recruit', { p_trip: id });
+  if (error) { toast('締め切れませんでした', true); return; }
+  toast('募集を締め切りました'); await refreshSocial(); renderCalendar(); await openRecruitManage(id);
+}
+async function saveParticipants(id){
+  const sels = [...document.querySelectorAll('.rc-result')];
+  const confirmed = sels.filter(s => s.value === 'confirmed').map(s => s.dataset.mid);
+  const waitlist  = sels.filter(s => s.value === 'waitlist').map(s => s.dataset.mid);
+  spin(true);
+  const { error } = await sb.rpc('select_participants', { p_trip: id, p_confirmed: confirmed, p_waitlist: waitlist });
+  spin(false);
+  if (error) { toast((error.message || '').includes('定員') ? error.message : '保存に失敗しました', true); return; }
+  toast(`確定 ${confirmed.length}人・キャンセル待ち ${waitlist.length}人 を保存しました`);
+  await refreshSocial(); renderGenreTabs(); renderCalendar(); await openRecruitManage(id);
+}
+
+/* ---------- 声をかけられた人: 募集ページ ---------- */
+let rcPick = null;
+async function openRecruitPage(id){
+  await refreshSocial();
+  const r = state.recruits.find(x => x.trip_id === id);
+  if (!r) { toast('この募集は終了しました'); renderGenreTabs(); return; }
+  state.recruitPageId = id;
+  rcPick = r.my_status === 'invited' ? null : r.my_status;
+  $('view-cal').classList.add('hidden');
+  $('view-trip').classList.add('hidden');
+  $('view-recruit').classList.remove('hidden');
+  renderGenreTabs();
+  const closed = !r.recruit_open || (r.recruit_deadline && r.recruit_deadline < todayStr());
+  const result = r.my_result === 'confirmed'
+    ? `<div class="t-line"><span class="t-confirmed">🎉 参加が確定しました</span><p class="sub" style="margin-top:6px">タブに表示されるトリップから、しおりと掲示板が使えます。</p></div>`
+    : r.my_result === 'waitlist'
+      ? `<div class="t-line"><span class="rc-status" style="background:#E0A62B">キャンセル待ち ${r.waitlist_order}番目</span><p class="sub" style="margin-top:6px">枠が空いたら主催者から連絡があります。</p></div>`
+      : '';
+  $('recruit-body').innerHTML = `
+    <h1 style="margin-bottom:4px">📣 ${esc(r.name)}</h1>
+    <div class="card">
+      <div><b>日程</b> ${rangeLabel([r.confirmed_start, r.confirmed_end])}</div>
+      <div style="margin-top:6px"><b>残り枠</b> ${Math.max(0, r.remaining)} / 定員 ${r.capacity}人</div>
+      ${r.recruit_deadline ? `<div style="margin-top:6px"><b>回答期限</b> ${fmtDate(r.recruit_deadline)}${closed && r.recruit_open ? ' <span class="sub">(期限を過ぎました)</span>' : ''}</div>` : ''}
+      ${!r.recruit_open ? '<div class="sub" style="margin-top:6px">この募集は締め切られました</div>' : ''}
+      ${result}
+    </div>
+    <div class="card">
+      <h2>あなたの回答</h2>
+      <div class="rc-opt">
+        ${['go','positive','maybe','no'].map(k => `<button type="button" id="rc-${k}" class="${rcPick === k ? 'on' : ''}"
+            ${closed ? 'disabled' : ''} onclick="pickRecruit('${k}')">${RECRUIT_STATUS[k].label}</button>`).join('')}
+      </div>
+      <input class="field" id="rc-comment" maxlength="200" placeholder="ひとこと(任意。例: 後半だけなら行けます)" value="${esc(r.my_comment || '')}" ${closed ? 'disabled' : ''}>
+      ${closed ? '' : `<button class="btn" style="margin-top:10px; background:#6E4FBF" onclick="submitRecruit('${id}')">回答を送る</button>`}
+      <p class="sub" style="margin-top:8px">回答はあとから変えられます。参加が決まるまでは、他の人の回答は見えません。</p>
+    </div>`;
+  window.scrollTo(0, 0);
+}
+function pickRecruit(k){
+  rcPick = k;
+  ['go','positive','maybe','no'].forEach(x => $('rc-' + x).classList.toggle('on', x === k));
+}
+async function submitRecruit(id){
+  if (!rcPick) { toast('回答を選んでください', true); return; }
+  spin(true);
+  const { error } = await sb.rpc('respond_recruit', { p_trip: id, p_status: rcPick, p_comment: $('rc-comment').value });
+  spin(false);
+  if (error) { toast((error.message || '').includes('期限') ? '回答期限を過ぎています' : '送れませんでした', true); return; }
+  toast('回答を送りました');
+  await openRecruitPage(id);
+}
+function closeRecruitPage(){
+  state.recruitPageId = null;
+  $('view-recruit').classList.add('hidden');
+  $('view-cal').classList.remove('hidden');
+  renderGenreTabs();
+}
+
+/* =====================================================================
+   サーフィン記録(自分タブ)
 ===================================================================== */
 async function renderSurfStats(){
   await sb.rpc('snapshot_surf_log');
@@ -1611,7 +1919,8 @@ async function renderSurfStats(){
       <div><span class="sub">トリップ</span><b>${data.trip}</b></div>
     </div>
     <p class="sub" style="margin-top:10px; font-size:.78rem">
-      「行く」で塗った日と、確定したトリップの日が、日付が過ぎると自動で記録されます(同じ日は1日として数えます)。
+      「行く」で塗った日と、確定したトリップの日は、日付が過ぎると自動で「行った」になります(同じ日は1日として数えます)。<br>
+      行かなかった日はカレンダーで消しゴム、予定に入れていなかった日は「✓ 行った」で塗って直せます。
       ${data.last_date ? `<br>最後に行った日: ${fmtDate(data.last_date)}` : ''}</p>`;
 }
 
@@ -1634,7 +1943,7 @@ async function renderNakama(){
   spin(false);
   const others = state.members.filter(m => m.id !== state.me.id);
   if (others.length === 0) {
-    $('nakama-list').innerHTML = '<p class="sub">まだ仲間がいません。管理者が「じぶん」タブから追加できます。</p>';
+    $('nakama-list').innerHTML = '<p class="sub">まだ仲間がいません。管理者が「自分」タブから追加できます。</p>';
     updateNakamaBadge();
     return;
   }
@@ -1772,40 +2081,12 @@ async function openMemberDetail(id){
 }
 
 /* =====================================================================
-   じぶんタブ
+   自分タブ
 ===================================================================== */
 async function renderJibun(){
   renderSurfStats();
   $('my-name').textContent = state.me.name;
   $('my-role').textContent = state.me.is_admin ? '管理者' : '';
-  spin(true);
-  const now = new Date();
-  const from = ymd(new Date(now.getFullYear(), now.getMonth(), 1));
-  const { data } = await sb.from('availability')
-    .select('id,genre,date,intent,note')
-    .eq('member_id', state.me.id).gte('date', from).order('date');
-  spin(false);
-
-  const byMonth = {};
-  (data || []).forEach(r => {
-    const key = r.date.slice(0, 7);
-    (byMonth[key] = byMonth[key] || []).push(r);
-  });
-  let html = '';
-  for (const key of Object.keys(byMonth).sort()) {
-    const [y, mo] = key.split('-');
-    html += `<div style="font-weight:700; margin:12px 0 4px">${Number(y)}年${Number(mo)}月</div>`;
-    html += byMonth[key].map(r => {
-      const idef = intentDef(r.genre, r.intent);
-      return `<div class="mylist-day">
-        <span style="min-width:74px">${fmtDate(r.date)}</span>
-        <span class="intent-tag" style="background:${idef.color}; color:${textOn(idef)}">${INTENTS[r.genre].label}・${idef.label}</span>
-        ${r.note ? `<span class="sub" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">📝${esc(r.note)}</span>` : '<span class="spacer"></span>'}
-        <button class="del-btn" onclick="deleteMyDay('${r.id}')">🗑</button>
-      </div>`;
-    }).join('');
-  }
-  $('my-schedule').innerHTML = html || '<p class="sub">今月以降の予定はまだありません</p>';
 
   // 管理者メニュー
   if (state.me.is_admin) {
@@ -1880,12 +2161,6 @@ async function copyInvite(){
   }
 }
 
-async function deleteMyDay(id){
-  const { error } = await sb.from('availability').delete().eq('id', id);
-  if (error) { toast('削除に失敗しました', true); return; }
-  toast('削除しました');
-  await renderJibun();
-}
 
 /* ---------- PIN変更 ---------- */
 /* mode: 'normal' / 'first'(初回) / 'upgrade'(4桁→6桁。やめられない) */
