@@ -41,6 +41,17 @@
 - 声をかけられた人は **行く / 前向きに検討 / 様子見 / 行けない** + ひとことで回答(期限内なら変更可)
 - **確定**:作った人が回答を見て、定員まで **確定** と **キャンセル待ち**(順番つき)を決めます。確定した人は参加者になり、トリップページ(しおり・掲示板)が使えます
 
+### プッシュ通知(アプリを閉じていても届く)
+
+- **ホーム画面に追加したアプリ**から開き、「自分」タブ → **🔔 通知** → **「この端末で通知をオンにする」**(iPhoneはiOS 16.4以上。Safariのタブでは受け取れません)
+- 仲間が予定を塗ったり、掲示板に書いたりすると、**アイコンに未読の数字**と通知が届きます。アプリを開くと数字は消えます
+- **出し方**:控えめ(音なし・通知は1件に上書き)/しっかり(毎回知らせる)
+- **予定の通知ルール**(複数作れる):色・ジャンル・強さ(行く/誰か行こう/ワンチャン)・何日先まで・誰の予定か。通知の先頭に 🔵🟢🟠🔴🟣🟡 の色マークが付きます
+  - 通知されるのは、相手が「見せる」にしてくれている予定だけです
+- **その他**:掲示板の新着、トリップの連絡(日程の確定・募集・しおりの更新)をそれぞれオン/オフ
+- 「テスト通知を送る」で、1分以内に届くか確かめられます
+- 送信は1分ごとにまとめて行われます(塗ってから届くまで最大1分ほど)
+
 ### サーフィン記録
 
 - 「行く」で塗った日と、確定したトリップの日は、**日付が過ぎると自動で「行った」**になります
@@ -86,6 +97,7 @@
 | 6 | `supabase/007_trip_page_and_log.sql` | トリップ確定・しおり・掲示板・サーフィン記録 | `OK` の1行 |
 | 7 | `supabase/008_went_and_boat.sql` | 「行った」の修正・定員ありトリップ(募集) | `OK` の1行 |
 | 8 | `supabase/009_recruit_note.sql` | 募集の案内文 | `OK` の1行 |
+| 9 | `supabase/010_push.sql` | プッシュ通知(設定・端末・1分ごとの送信予約) | `OK` の1行 |
 
 ### ステップ3 URLと鍵を index.html に貼る ✅済
 
@@ -120,6 +132,9 @@ surf-iko/
 ├── supabase/007_trip_page_and_log.sql ← トリップページ・記録(7番目に実行)
 ├── supabase/008_went_and_boat.sql   ← 行った・定員ありトリップ(8番目に実行)
 ├── supabase/009_recruit_note.sql    ← 募集の案内文(9番目に実行)
+├── supabase/010_push.sql            ← プッシュ通知(10番目に実行)
+├── supabase/functions/notify/       ← 通知を送るプログラム(GitHubから自動配置)
+├── .github/workflows/deploy-functions.yml ← 上のプログラムの自動配置
 ├── .github/workflows/keepalive.yml  ← 自動ping
 └── README.md                        ← この文書
 ```
@@ -147,6 +162,23 @@ Supabase無料プランは、しばらく使わないと一時停止します。
    - Secret: `sb_publishable_...`(ステップ3でコピーした鍵)
 5. 動作確認: リポジトリの **Actions** タブ → 左の「Supabase Keepalive」→ 右の **「Run workflow」** →
    緑のチェックが付けば成功
+
+### ステップ6-2 プッシュ通知の準備(3つの Secrets と1回の手動実行)
+
+通知を送るプログラム(Supabase の Edge Function)は、GitHub から自動で配置されます。そのために鍵を登録します。
+
+1. **Supabase のアクセストークンを作る**
+   - https://supabase.com/dashboard/account/tokens を開く → **「Generate new token」** → 名前は `github-deploy` → **Generate**
+   - 表示された `sbp_...` で始まる文字列をコピー(この画面を閉じると二度と見られません)
+2. **GitHub に Secrets を4つ登録**(リポジトリの Settings → Secrets and variables → Actions → New repository secret)
+   | Name | Secret |
+   |---|---|
+   | `SUPABASE_ACCESS_TOKEN` | 1でコピーした `sbp_...` |
+   | `VAPID_PUBLIC_KEY` | 通知用の公開鍵(Claude Code から渡されたもの) |
+   | `VAPID_PRIVATE_KEY` | 通知用の秘密鍵(同上。**人に見せない**) |
+   | `NOTIFY_SECRET` | 送信プログラムの合言葉(同上。`010_push.sql` に書いたものと同じ) |
+3. **Actions** タブ → 左の **「Deploy Supabase Functions」** → **Run workflow** → 緑のチェック✅で完了
+4. `supabase/010_push.sql` を実行済みなら、これで通知が動きます。アプリの「自分」タブ →「🔔 通知」→「テスト通知を送る」で確認
 
 ### ステップ7 iPhoneのホーム画面に置く
 

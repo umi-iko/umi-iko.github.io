@@ -1,0 +1,44 @@
+name: Deploy Supabase Functions
+
+# Supabase の Edge Function(プッシュ通知の送信プログラム)を自動で配置します。
+# supabase/functions/ の中身を変更して main に push すると動きます。手動実行も可能。
+#
+# 必要な Secrets(リポジトリの Settings → Secrets and variables → Actions):
+#   SUPABASE_ACCESS_TOKEN  … Supabase のアカウント → Access Tokens で作る
+#   VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY … 通知用の鍵(README 参照)
+#   NOTIFY_SECRET          … 送信プログラムを呼ぶときの合言葉(SQLに書いたものと同じ)
+
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/functions/**', '.github/workflows/deploy-functions.yml']
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: fxdqfbryqzfuuhabkpto
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Check secrets
+        run: |
+          for v in SUPABASE_ACCESS_TOKEN VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY NOTIFY_SECRET; do
+            if [ -z "${!v}" ]; then echo "Secret $v が未登録です。READMEの「プッシュ通知」を見てください。"; exit 1; fi
+          done
+        env:
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          NOTIFY_SECRET: ${{ secrets.NOTIFY_SECRET }}
+      - name: Set function secrets
+        run: |
+          supabase secrets set --project-ref "$PROJECT_REF" \
+            VAPID_PUBLIC_KEY="${{ secrets.VAPID_PUBLIC_KEY }}" \
+            VAPID_PRIVATE_KEY="${{ secrets.VAPID_PRIVATE_KEY }}" \
+            NOTIFY_SECRET="${{ secrets.NOTIFY_SECRET }}"
+      - name: Deploy notify function
+        run: supabase functions deploy notify --project-ref "$PROJECT_REF" --no-verify-jwt

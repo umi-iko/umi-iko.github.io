@@ -18,6 +18,8 @@
 <script>
 window.SUPABASE_URL      = "https://fxdqfbryqzfuuhabkpto.supabase.co";
 window.SUPABASE_ANON_KEY = "sb_publishable_W1abE7HNjQaarTDyIOsXbQ_YNIPWrX7";
+// プッシュ通知用の公開鍵(公開してよい鍵。秘密鍵は GitHub Secrets → Supabase にだけ置く)
+window.VAPID_PUBLIC_KEY  = "BA9Xm1y7twV-ylxSr-6Ie0Cl3AMbKSUeK_ES5KWK8f6NQxncSMMBE_GVwQNMkT4seID6xvd0lyYyTy-rFxmblgc";
 </script>
 <!-- ▲▲▲ ここまで ▲▲▲ -->
 
@@ -142,6 +144,16 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 .post .body{white-space:pre-wrap; word-break:break-word; margin-top:3px; line-height:1.5;}
 .post.mine .body{color:#3A2A6E;}
 #post-input{resize:vertical; min-height:70px;}
+/* 通知設定 */
+.nrule{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);}
+.nrule:last-child{border-bottom:none;}
+.ndot{width:14px; height:14px; border-radius:50%; flex-shrink:0;}
+.seg{display:flex; gap:6px; flex-wrap:wrap;}
+.seg button{min-height:40px; border-radius:20px; padding:0 14px; border:1.5px solid var(--line); background:#fff; font-size:.85rem; font-weight:600; color:var(--sub);}
+.seg button.on{border-color:var(--accent); background:var(--accent-weak); color:var(--accent);}
+.cdot-pick{display:flex; gap:10px;}
+.cdot-pick button{width:36px; height:36px; border-radius:50%; border:3px solid transparent;}
+.cdot-pick button.on{border-color:var(--text);}
 /* サーフィン記録 */
 .stat-big{font-size:2.2rem; font-weight:800; line-height:1.1;}
 .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px; text-align:center;}
@@ -365,6 +377,10 @@ h2{font-size:1.05rem; margin:0 0 10px;}
       <button class="btn secondary" style="margin-top:14px" onclick="openPinChange('normal')">PINを変える</button>
       <button class="btn secondary" style="margin-top:10px" onclick="confirmLogout()">ログアウト</button>
     </div>
+    <div class="card" id="notify-card">
+      <h2>🔔 通知</h2>
+      <div id="notify-body"><p class="sub">読み込み中…</p></div>
+    </div>
     <div class="card" id="surf-record">
       <h2>🏄 サーフィン記録</h2>
       <div id="surf-stats"><p class="sub">読み込み中…</p></div>
@@ -519,6 +535,8 @@ const state = {
   tripUnread: {},           // trip_id -> 掲示板の未読数
   monthLog: [],             // 表示月の自分のサーフィン記録(行った/行かなかった)
   recruits: [],             // 自分が声をかけられている募集
+  pushSub: null,            // この端末の通知登録(あれば)
+  notifySettings: null, notifyRules: [], pushDevices: [],
   recruitPageId: null,
   tripPageId: null,         // 開いているトリップページ
   tripPosts: [],
@@ -595,6 +613,12 @@ async function boot(){
     if (inv) {
       state.pendingInvite = inv;
       u.searchParams.delete('invite');
+      history.replaceState(null, '', u.pathname + (u.search || '') + u.hash);
+    }
+    const tp = u.searchParams.get('trip');
+    if (tp) {
+      state.pendingTrip = tp;
+      u.searchParams.delete('trip');
       history.replaceState(null, '', u.pathname + (u.search || '') + u.hash);
     }
   } catch (e) {}
@@ -762,6 +786,7 @@ async function enterApp(me){
   state.me = me;
   // 日付が過ぎた「行く」・確定トリップを記録に確定(結果は待たない)
   sb.rpc('snapshot_surf_log').then(() => {}, () => {});
+  clearAppBadge();
   $('login-screen').classList.add('hidden');
   $('app').classList.remove('hidden');
   const now = new Date();
@@ -776,7 +801,15 @@ async function enterApp(me){
   spin(false);
   renderCalendar();
   updateNakamaBadge();
-  showTab('cal');
+  await showTab('cal');
+  // 通知をタップして開いたときは、そのトリップへ
+  if (state.pendingTrip) { const id = state.pendingTrip; state.pendingTrip = null; await openFromNotification(id); }
+}
+async function openFromNotification(tripId){
+  const t = tripById(tripId);
+  if (t) { if (t.confirmed_start) await openTripPage(t.id); else await setGenre('trip:' + t.id); return; }
+  const r = state.recruits.find(x => x.trip_id === tripId);
+  if (r) await openRecruitPage(tripId);
 }
 
 async function confirmLogout(){
@@ -1915,6 +1948,234 @@ function closeRecruitPage(){
 }
 
 /* =====================================================================
+   プッシュ通知(設定・端末の登録)
+===================================================================== */
+const NOTIFY_COLORS = { blue: '#3E86C6', green: '#2E9E5B', orange: '#E8862A', red: '#D64545', purple: '#8E5BD6', yellow: '#E0B400' };
+const NOTIFY_COLOR_EMOJI = { blue: '🔵', green: '🟢', orange: '🟠', red: '🔴', purple: '🟣', yellow: '🟡' };
+const INTENT_NAMES = { go: '行く', if_someone: '誰か行こう', maybe: 'ワンチャン' };
+
+function pushSupported(){
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+function isStandalone(){
+  return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+function urlB64ToUint8Array(b64){
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+async function getSwRegistration(){
+  if (window.__pushStub) return null;
+  if (!('serviceWorker' in navigator)) return null;
+  // 登録がなければ待たずに null(ready は登録がないと永遠に待つため)
+  return (await navigator.serviceWorker.getRegistration()) || null;
+}
+async function currentPushSubscription(){
+  if (window.__pushStub) return window.__pushStub.current || null;
+  const reg = await getSwRegistration();
+  return reg ? await reg.pushManager.getSubscription() : null;
+}
+function clearAppBadge(){
+  try { if ('clearAppBadge' in navigator) navigator.clearAppBadge().catch(() => {}); } catch (e) {}
+  sb.rpc('clear_badge').then(() => {}, () => {});
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && state.me) clearAppBadge(); });
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', async (e) => {
+    const d = e.data || {};
+    if (d.type === 'resubscribe' && state.me) { try { await enablePush(true); } catch (err) {} }
+    if (d.type === 'open' && d.url && state.me) {
+      try { const id = new URL(d.url).searchParams.get('trip'); if (id) await openFromNotification(id); } catch (err) {}
+    }
+  });
+}
+
+async function loadNotifyData(){
+  const [{ data: st }, { data: rules }, { data: devs }] = await Promise.all([
+    sb.from('notify_settings').select('*').maybeSingle(),
+    sb.from('notify_rules').select('*').order('sort').order('created_at'),
+    sb.from('push_subscriptions').select('id,endpoint,device,created_at'),
+  ]);
+  state.notifySettings = st || null;
+  state.notifyRules = rules || [];
+  state.pushDevices = devs || [];
+  state.pushSub = await currentPushSubscription().catch(() => null);
+}
+
+async function renderNotify(){
+  await loadNotifyData();
+  const box = $('notify-body');
+  const thisDevice = state.pushSub && state.pushDevices.some(d => d.endpoint === state.pushSub.endpoint);
+  let head = '';
+  if (!pushSupported()) {
+    head = `<p class="sub">この開き方では通知を設定できません。<b>ホーム画面に追加したアプリ</b>から開いてください(iPhoneはiOS 16.4以上)。</p>`;
+  } else if (!isStandalone() && /iPhone|iPad/.test(navigator.userAgent)) {
+    head = `<p class="sub">iPhoneでは、<b>ホーム画面に追加したアプリ</b>から開いたときだけ通知を受け取れます。Safariの共有ボタン →「ホーム画面に追加」をしてから、そのアイコンで開いてください。</p>`;
+  } else if (Notification.permission === 'denied') {
+    head = `<p class="sub">この端末では通知が「許可しない」になっています。iPhoneの「設定」→「通知」→「サーフィン行こ」から許可してください。</p>`;
+  } else if (thisDevice) {
+    head = `<div class="row"><span>✅ この端末で通知を受け取ります</span><div class="spacer"></div>
+      <button class="t-btn" style="color:var(--danger)" onclick="disablePush()">この端末の通知をやめる</button></div>
+      <button class="btn secondary" style="margin-top:8px" onclick="sendTestNotification()">テスト通知を送る(1分以内に届きます)</button>`;
+  } else {
+    head = `<p class="sub">仲間が予定を塗ったり書き込んだりしたら、アイコンの数字と通知で知らせます。</p>
+      <button class="btn" onclick="enablePush()">🔔 この端末で通知をオンにする</button>`;
+  }
+  const others = state.pushDevices.filter(d => !state.pushSub || d.endpoint !== state.pushSub.endpoint);
+  const devList = others.length ? `<p class="sub" style="margin-top:8px">他に登録中の端末: ${others.map(d => esc(d.device || '端末')).join('、')}</p>` : '';
+
+  // 設定(端末を1つでも登録していれば出す)
+  const st = state.notifySettings;
+  let settingsHtml = '';
+  if (st) {
+    settingsHtml = `
+      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line)">
+        <div class="sub" style="margin-bottom:6px"><b>出し方</b></div>
+        <div class="seg">
+          <button class="${st.mode === 'quiet' ? 'on' : ''}" onclick="setNotifyMode('quiet')">控えめ(音なし・1件にまとめる)</button>
+          <button class="${st.mode === 'normal' ? 'on' : ''}" onclick="setNotifyMode('normal')">しっかり(毎回知らせる)</button>
+        </div>
+        <p class="sub" style="margin-top:6px">どちらでもアイコンの数字は付きます。アプリを開くと数字は消えます。</p>
+        <div class="sub" style="margin:14px 0 6px"><b>予定の通知ルール</b>(仲間が「見せる」にしてくれている予定だけが対象)</div>
+        ${state.notifyRules.length ? state.notifyRules.map(r => `
+          <div class="nrule">
+            <span class="ndot" style="background:${NOTIFY_COLORS[r.color] || '#999'}"></span>
+            <div style="flex:1; min-width:0; font-size:.9rem; ${r.enabled ? '' : 'opacity:.45'}">${ruleSummary(r)}</div>
+            <button class="t-btn" style="color:var(--accent)" onclick="openRuleEditor('${r.id}')">編集</button>
+          </div>`).join('') : '<p class="sub">ルールがありません。追加すると予定の通知が届きます。</p>'}
+        <button class="btn secondary" style="margin-top:8px" onclick="openRuleEditor(null)">＋ ルールを追加</button>
+        <div class="sub" style="margin:14px 0 6px"><b>その他の通知</b></div>
+        <label class="row" style="min-height:44px"><input type="checkbox" class="check" ${st.trip_posts ? 'checked' : ''} onchange="setNotifyFlag('trip_posts', this.checked)"> 掲示板の新しい書き込み</label>
+        <label class="row" style="min-height:44px"><input type="checkbox" class="check" ${st.trip_events ? 'checked' : ''} onchange="setNotifyFlag('trip_events', this.checked)"> トリップの連絡(日程の確定・募集・しおりの更新)</label>
+      </div>`;
+  }
+  box.innerHTML = head + devList + settingsHtml;
+}
+function ruleSummary(r){
+  const g = (r.genres || []).length === 3 ? '海・プール・海外' : (r.genres || []).map(x => INTENTS[x]?.label || x).join('・');
+  const i = (r.intents || []).map(x => INTENT_NAMES[x] || x).join('・');
+  const d = r.days_ahead ? `${r.days_ahead}日先まで` : '期間の制限なし';
+  const w = r.member_ids ? `${r.member_ids.map(memberName).map(esc).join('・')}の` : '';
+  return `${w}<b>${esc(g)}</b>の「${esc(i)}」・${d}${r.enabled ? '' : '(オフ)'}`;
+}
+
+async function enablePush(silentResub){
+  if (window.__pushStub) {
+    const sub = window.__pushStub.next;
+    window.__pushStub.current = sub;
+    await sb.rpc('save_push_subscription', { p_endpoint: sub.endpoint, p_p256dh: sub.keys.p256dh, p_auth: sub.keys.auth, p_device: 'テスト端末' });
+    if (!silentResub) toast('通知をオンにしました');
+    await renderNotify(); return;
+  }
+  if (!pushSupported()) { toast('この開き方では通知を設定できません', true); return; }
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { toast('通知が許可されませんでした', true); await renderNotify(); return; }
+  spin(true);
+  try {
+    let reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) reg = await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(window.VAPID_PUBLIC_KEY) });
+    const j = sub.toJSON();
+    const device = /iPhone/.test(navigator.userAgent) ? 'iPhone' : /iPad/.test(navigator.userAgent) ? 'iPad' : /Android/.test(navigator.userAgent) ? 'Android' : 'PC';
+    const { error } = await sb.rpc('save_push_subscription', { p_endpoint: sub.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_device: device });
+    if (error) throw error;
+    if (!silentResub) toast('通知をオンにしました');
+  } catch (e) {
+    console.error(e);
+    toast('通知の登録に失敗しました。ホーム画面のアプリから開いているか確認してください', true);
+  } finally { spin(false); }
+  await renderNotify();
+}
+async function disablePush(){
+  const sub = await currentPushSubscription();
+  if (sub) {
+    await sb.rpc('remove_push_subscription', { p_endpoint: sub.endpoint });
+    if (window.__pushStub) window.__pushStub.current = null; else { try { await sub.unsubscribe(); } catch (e) {} }
+  }
+  toast('この端末の通知をやめました');
+  await renderNotify();
+}
+async function sendTestNotification(){
+  const { error } = await sb.rpc('send_test_notification');
+  toast(error ? '送れませんでした' : 'テスト通知を送りました。1分以内に届きます(アプリを閉じて待ってみてね)', !!error);
+}
+async function setNotifyMode(mode){
+  await sb.from('notify_settings').upsert({ member_id: state.me.id, mode, updated_at: new Date().toISOString() }, { onConflict: 'member_id' });
+  toast(mode === 'quiet' ? '控えめにしました' : 'しっかり知らせます');
+  await renderNotify();
+}
+async function setNotifyFlag(key, on){
+  await sb.from('notify_settings').upsert({ member_id: state.me.id, [key]: on, updated_at: new Date().toISOString() }, { onConflict: 'member_id' });
+  toast(on ? '通知します' : '通知しません');
+  await renderNotify();
+}
+
+/* ---- ルールの編集 ---- */
+let ruleDraft = null;
+function openRuleEditor(id){
+  const r = id ? state.notifyRules.find(x => x.id === id) : null;
+  ruleDraft = r ? { ...r, genres: [...r.genres], intents: [...r.intents], member_ids: r.member_ids ? [...r.member_ids] : null }
+                : { id: null, color: 'blue', genres: ['sea','pool','abroad'], intents: ['go','if_someone'], days_ahead: 14, member_ids: null, enabled: true };
+  renderRuleEditor();
+}
+function renderRuleEditor(){
+  const d = ruleDraft;
+  const segBtn = (on, label, fn) => `<button type="button" class="${on ? 'on' : ''}" onclick="${fn}">${label}</button>`;
+  const others = state.members.filter(m => m.id !== state.me.id);
+  openSheet(`
+    <h2>${d.id ? '通知ルールを編集' : '通知ルールを追加'}</h2>
+    <div class="sub" style="margin:10px 0 6px"><b>色</b>(通知の先頭に付く目印)</div>
+    <div class="cdot-pick">${Object.keys(NOTIFY_COLORS).map(c =>
+      `<button type="button" class="${d.color === c ? 'on' : ''}" style="background:${NOTIFY_COLORS[c]}" onclick="ruleSet('color','${c}')" title="${c}"></button>`).join('')}</div>
+    <div class="sub" style="margin:14px 0 6px"><b>ジャンル</b></div>
+    <div class="seg">${GENRES.map(g => segBtn(d.genres.includes(g), INTENTS[g].label, `ruleToggle('genres','${g}')`)).join('')}</div>
+    <div class="sub" style="margin:14px 0 6px"><b>強さ</b>(どの合図を知らせるか)</div>
+    <div class="seg">${Object.keys(INTENT_NAMES).map(k => segBtn(d.intents.includes(k), INTENT_NAMES[k], `ruleToggle('intents','${k}')`)).join('')}</div>
+    <div class="sub" style="margin:14px 0 6px"><b>期間</b>(何日先までの予定を知らせるか)</div>
+    <div class="seg">${[[3,'3日先まで'],[7,'1週間'],[14,'2週間'],[30,'1か月'],[null,'制限なし']].map(([n,l]) => segBtn(d.days_ahead === n, l, `ruleSet('days_ahead',${n})`)).join('')}</div>
+    <div class="sub" style="margin:14px 0 6px"><b>誰の予定</b></div>
+    <div class="seg">${segBtn(d.member_ids === null, '見せてもらっている全員', `ruleSet('member_ids',null)`)}${segBtn(d.member_ids !== null, '選んだ人だけ', `ruleSet('member_ids',[])`)}</div>
+    ${d.member_ids !== null ? `<div style="max-height:30vh; overflow-y:auto; margin-top:6px">${others.map(m => `
+      <label class="trip-member-row"><input type="checkbox" class="check" ${d.member_ids.includes(m.id) ? 'checked' : ''} onchange="ruleMember('${m.id}', this.checked)">
+        <span class="avatar" style="background:${memberColor(m.id)}; width:32px; height:32px; font-size:.9rem">${esc(m.name[0])}</span><span>${esc(m.name)}</span></label>`).join('')}</div>` : ''}
+    ${d.id ? `<label class="row" style="min-height:44px; margin-top:10px"><input type="checkbox" class="check" ${d.enabled ? 'checked' : ''} onchange="ruleSet('enabled', this.checked, true)"> このルールを使う</label>` : ''}
+    <button class="btn" style="margin-top:14px" onclick="saveRule()">保存する</button>
+    ${d.id ? `<button class="btn danger-outline" style="margin-top:8px" onclick="deleteRule('${d.id}')">このルールを削除</button>` : ''}
+    <button class="btn secondary" style="margin-top:8px" onclick="closeSheet()">やめる</button>
+  `);
+}
+function ruleSet(k, v, noRender){ ruleDraft[k] = v; if (!noRender) renderRuleEditor(); }
+function ruleToggle(k, v){
+  const arr = ruleDraft[k]; const i = arr.indexOf(v);
+  if (i >= 0) arr.splice(i, 1); else arr.push(v);
+  renderRuleEditor();
+}
+function ruleMember(id, on){
+  const arr = ruleDraft.member_ids; const i = arr.indexOf(id);
+  if (on && i < 0) arr.push(id); if (!on && i >= 0) arr.splice(i, 1);
+}
+async function saveRule(){
+  const d = ruleDraft;
+  if (!d.genres.length) { toast('ジャンルを1つ以上選んでください', true); return; }
+  if (!d.intents.length) { toast('強さを1つ以上選んでください', true); return; }
+  if (d.member_ids && !d.member_ids.length) { toast('人を1人以上選ぶか、「全員」にしてください', true); return; }
+  const row = { member_id: state.me.id, color: d.color, genres: d.genres, intents: d.intents, days_ahead: d.days_ahead, member_ids: d.member_ids, enabled: d.enabled };
+  const { error } = d.id
+    ? await sb.from('notify_rules').update(row).eq('id', d.id)
+    : await sb.from('notify_rules').insert(row);
+  if (error) { toast('保存に失敗しました', true); return; }
+  closeSheet(); toast('ルールを保存しました'); await renderNotify();
+}
+async function deleteRule(id){
+  const { error } = await sb.from('notify_rules').delete().eq('id', id);
+  if (error) { toast('削除に失敗しました', true); return; }
+  closeSheet(); toast('ルールを削除しました'); await renderNotify();
+}
+
+/* =====================================================================
    サーフィン記録(自分タブ)
 ===================================================================== */
 async function renderSurfStats(){
@@ -2101,6 +2362,7 @@ async function openMemberDetail(id){
 ===================================================================== */
 async function renderJibun(){
   renderSurfStats();
+  renderNotify();
   $('my-name').textContent = state.me.name;
   $('my-role').textContent = state.me.is_admin ? '管理者' : '';
 
