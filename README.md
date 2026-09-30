@@ -107,6 +107,7 @@
 | 9 | `supabase/010_push.sql` | プッシュ通知(設定・端末・1分ごとの送信予約) | `OK` の1行 |
 | 10 | `supabase/011_profile.sql` | プロフィール・自分だけのメモ名 | `OK` の1行 |
 | 11 | `supabase/012_fixes.sql` | 総点検で見つかった不具合の修正・合言葉の置き場所 | `OK` の1行 |
+| 12 | `supabase/013_ranking.sql` | 行った日数のランキング | `OK` の1行 |
 
 ### ステップ3 URLと鍵を index.html に貼る ✅済
 
@@ -144,6 +145,7 @@ surf-iko/
 ├── supabase/010_push.sql            ← プッシュ通知(10番目に実行)
 ├── supabase/011_profile.sql         ← プロフィール・メモ名(11番目に実行)
 ├── supabase/012_fixes.sql           ← 不具合修正・合言葉の置き場所(12番目に実行)
+├── supabase/013_ranking.sql         ← 行った日数ランキング(13番目に実行)
 ├── supabase/functions/notify/       ← 通知を送るプログラム(GitHubから自動配置)
 ├── .github/workflows/deploy-functions.yml ← 上のプログラムの自動配置
 ├── .github/workflows/keepalive.yml  ← 自動ping

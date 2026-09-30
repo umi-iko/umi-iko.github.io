@@ -168,6 +168,13 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 .cdot-pick button{width:36px; height:36px; border-radius:50%; border:3px solid transparent;}
 .cdot-pick button.on{border-color:var(--text);}
 /* サーフィン記録 */
+.rank-row{display:flex; align-items:center; gap:10px; padding:8px 6px; border-bottom:1px solid var(--line);}
+.rank-row:last-child{border-bottom:none;}
+.rank-row.me{background:var(--accent-weak); border-radius:10px;}
+.rank-no{width:30px; text-align:center; font-weight:800; color:var(--accent); font-size:1.05rem; flex:none;}
+.rank-no.top{font-size:1.3rem;}
+.rank-days{margin-left:auto; font-weight:800; font-size:1.1rem; white-space:nowrap;}
+.rank-days span{font-size:.8rem; font-weight:600; color:var(--sub);}
 .stat-big{font-size:2.2rem; font-weight:800; line-height:1.1;}
 .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px; text-align:center;}
 .stat-grid div{background:var(--bg); border-radius:10px; padding:8px 2px;}
@@ -470,6 +477,14 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
       <h2>🏄 サーフィン記録</h2>
       <div id="surf-stats"><p class="sub">読み込み中…</p></div>
     </div>
+    <div class="card" id="ranking-card">
+      <div class="row" style="margin-bottom:8px"><h2 style="margin:0">🏆 ランキング</h2><div class="spacer"></div>
+        <div class="seg" id="rank-seg">
+          <button class="on" data-scope="year" onclick="setRankScope('year')">今年</button>
+          <button data-scope="all" onclick="setRankScope('all')">累計</button>
+        </div></div>
+      <div id="ranking-body"><p class="sub">読み込み中…</p></div>
+    </div>
     <div class="card hidden" id="admin-card">
       <h2>管理者メニュー</h2>
       <div style="margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid var(--line)">
@@ -685,7 +700,10 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
       <div class="hb">
         <p>「行く」にしていた日は、日付が過ぎると自動的に<b>「行った」</b>として集計されます。</p>
         <ul>
-          <li>画面下の<b>「自分」</b>に、今年と累計の日数が表示されます</li>
+          <li>画面下の<b>「自分」</b>に、今年と累計の日数が表示されます。その下に仲間全員の<b>行った日数ランキング</b>(今年 / 累計)も出ます</li>
+        </ul>
+        <div class="help-fig"><img src="help/11-ranking.png" alt="行った日数ランキング" loading="lazy"></div>
+        <ul>
           <li><b>実際には行かなかった日</b> … 「🧽 消しゴム」を選び、過去のその日をなぞると記録から外れます</li>
           <li><b>予定に入れていなかったが行った日</b> … <b>「✓ 行った」</b>を選び、過去のその日をなぞると記録に加わります</li>
         </ul>
@@ -2655,6 +2673,40 @@ async function renderSurfStats(){
       ${data.last_date ? `<br>最後に行った日: ${fmtDate(data.last_date)}` : ''}</p>`;
 }
 
+/* ---------- 行った日数ランキング ---------- */
+let rankScope = 'year';
+function setRankScope(sc){
+  rankScope = sc;
+  document.querySelectorAll('#rank-seg button').forEach(b => b.classList.toggle('on', b.dataset.scope === sc));
+  renderRanking();
+}
+async function renderRanking(){
+  const box = $('ranking-body');
+  const y = new Date().getFullYear();
+  const { data, error } = await sb.rpc('surf_ranking', { p_year: rankScope === 'year' ? y : null });
+  if (error || !data) { box.innerHTML = '<p class="sub">読み込めませんでした(追加SQL 013 の実行が必要かもしれません)</p>'; return; }
+  const rows = data.filter(r => r.days > 0);
+  if (!rows.length) { box.innerHTML = `<p class="sub">${rankScope === 'year' ? y + '年は' : ''}まだ記録がありません</p>`; return; }
+  const medal = (r) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r;
+  const TOP = 20;
+  const shown = rows.slice(0, TOP);
+  const mine = rows.find(r => r.member_id === state.me.id);
+  const html = shown.map(r => `
+    <div class="rank-row ${r.member_id === state.me.id ? 'me' : ''}">
+      <span class="rank-no ${r.rank <= 3 ? 'top' : ''}">${medal(r.rank)}</span>
+      <span class="avatar" style="background:${memberColor(r.member_id)}; width:32px; height:32px; font-size:.9rem">${esc(r.name[0])}</span>
+      <span>${esc(r.member_id === state.me.id ? '自分' : memberName(r.member_id) || r.name)}</span>
+      <span class="rank-days">${r.days}<span> 日</span></span>
+    </div>`).join('');
+  const tail = mine && !shown.includes(mine) ? `
+    <div class="rank-row me" style="margin-top:6px">
+      <span class="rank-no">${mine.rank}</span>
+      <span class="avatar" style="background:${memberColor(mine.member_id)}; width:32px; height:32px; font-size:.9rem">${esc(mine.name[0])}</span>
+      <span>自分</span><span class="rank-days">${mine.days}<span> 日</span></span>
+    </div>` : '';
+  box.innerHTML = html + tail + `<p class="sub" style="margin-top:8px; font-size:.78rem">${rankScope === 'year' ? y + '年に' : 'これまでに'}行った日数(海・プール・海外・トリップの合計。同じ日は1日)。上位${TOP}人まで表示</p>`;
+}
+
 /* =====================================================================
    仲間タブ
 ===================================================================== */
@@ -2815,7 +2867,7 @@ async function openMemberDetail(id){
    自分タブ
 ===================================================================== */
 async function renderJibun(){
-  renderSurfStats();
+  renderSurfStats().then(() => renderRanking());
   renderNotify();
   renderMyProfile();
   $('my-name').textContent = state.me.name;
