@@ -106,6 +106,7 @@
 | 8 | `supabase/009_recruit_note.sql` | 募集の案内文 | `OK` の1行 |
 | 9 | `supabase/010_push.sql` | プッシュ通知(設定・端末・1分ごとの送信予約) | `OK` の1行 |
 | 10 | `supabase/011_profile.sql` | プロフィール・自分だけのメモ名 | `OK` の1行 |
+| 11 | `supabase/012_fixes.sql` | 総点検で見つかった不具合の修正・合言葉の置き場所 | `OK` の1行 |
 
 ### ステップ3 URLと鍵を index.html に貼る ✅済
 
@@ -142,6 +143,7 @@ surf-iko/
 ├── supabase/009_recruit_note.sql    ← 募集の案内文(9番目に実行)
 ├── supabase/010_push.sql            ← プッシュ通知(10番目に実行)
 ├── supabase/011_profile.sql         ← プロフィール・メモ名(11番目に実行)
+├── supabase/012_fixes.sql           ← 不具合修正・合言葉の置き場所(12番目に実行)
 ├── supabase/functions/notify/       ← 通知を送るプログラム(GitHubから自動配置)
 ├── .github/workflows/deploy-functions.yml ← 上のプログラムの自動配置
 ├── .github/workflows/keepalive.yml  ← 自動ping
@@ -185,9 +187,15 @@ Supabase無料プランは、しばらく使わないと一時停止します。
    | `SUPABASE_ACCESS_TOKEN` | 1でコピーした `sbp_...` |
    | `VAPID_PUBLIC_KEY` | 通知用の公開鍵(Claude Code から渡されたもの) |
    | `VAPID_PRIVATE_KEY` | 通知用の秘密鍵(同上。**人に見せない**) |
-   | `NOTIFY_SECRET` | 送信プログラムの合言葉(同上。`010_push.sql` に書いたものと同じ) |
+   | `NOTIFY_SECRET` | 送信プログラムの合言葉(同上。次の 2-2 でデータベースにも同じ値を入れる) |
+   
+   **2-2. 合言葉をデータベースにも入れる**(コードには書きません)。SQL Editor で次の1行を実行(`ここに合言葉` を同じ値に置き換え):
+   ```sql
+   insert into private.settings (key, value) values ('notify_secret', 'ここに合言葉')
+   on conflict (key) do update set value = excluded.value;
+   ```
 3. **Actions** タブ → 左の **「Deploy Supabase Functions」** → **Run workflow** → 緑のチェック✅で完了
-4. `supabase/010_push.sql` を実行済みなら、これで通知が動きます。アプリの「自分」タブ →「🔔 通知」→「テスト通知を送る」で確認
+4. `supabase/010_push.sql` と `012_fixes.sql` を実行済みなら、これで通知が動きます。アプリの「自分」タブ →「🔔 通知」→「テスト通知を送る」で確認
 
 ### ステップ7 iPhoneのホーム画面に置く
 

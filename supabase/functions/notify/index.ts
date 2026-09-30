@@ -49,9 +49,15 @@ Deno.serve(async (req) => {
   ].map((p) => p.then((r) => r.data || [])));
 
   // 3. 送る内容を組み立てる
-  const plan = buildNotifications({
-    events, subs, settings, rules, shares, members, tripMembers, trips, invites, today: jstToday(),
-  });
+  let plan: any[] = [];
+  try {
+    plan = buildNotifications({
+      events, subs, settings, rules, shares, members, tripMembers, trips, invites, today: jstToday(),
+    });
+  } catch (err) {
+    console.error("buildNotifications failed", err);
+    return json({ error: String(err), events: events.length }, 500);
+  }
 
   // 4. 端末ごとに送る(バッジは端末ごとに加算)
   const badge: Record<string, number> = {};

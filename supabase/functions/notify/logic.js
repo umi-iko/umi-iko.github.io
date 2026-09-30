@@ -28,7 +28,8 @@ export function toRanges(dates) {
   return out;
 }
 export function rangeLabel([a, b]) {
-  if (a === b) return fmtDate(a);
+  if (!a) return '';
+  if (!b || a === b) return fmtDate(a);
   const days = Math.round((Date.parse(b) - Date.parse(a)) / 86400000) + 1;
   return `${fmtDate(a)}〜${fmtDate(b)} ${days}日間`;
 }
@@ -96,7 +97,7 @@ export function buildNotifications(ctx) {
     const t = trip(e.trip_id); if (!t) continue;
     const range = t.confirmed_start ? rangeLabel([t.confirmed_start, t.confirmed_end]) : '';
     if (e.kind === 'recruit_open') {
-      for (const inv of invites.filter((i) => i.trip_id === t.id && !i.result)) {
+      for (const inv of invites.filter((i) => i.trip_id === t.id && !i.result && (!e.target_id || i.member_id === e.target_id))) {
         if (!setting(inv.member_id).trip_events) continue;
         push(inv.member_id, { title: `📣 ${t.name} 募集中`, body: `${range}。アプリで回答してね`, tag: `recruit-${t.id}`, url: `./?trip=${t.id}` });
       }

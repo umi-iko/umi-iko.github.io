@@ -259,6 +259,17 @@ create trigger notify_invite
   for each row execute function public.tg_notify_invite();
 
 
+-- ============ 送信プログラムの合言葉(NOTIFY_SECRET)の置き場所 ============
+-- GitHub に置いたコードには書かず、データベースの中(private.settings)にだけ入れます。
+-- 値の登録は別途、SQL Editor で
+--   insert into private.settings (key, value) values ('notify_secret', 'ここに合言葉')
+--   on conflict (key) do update set value = excluded.value;
+-- を実行します(手順は README「プッシュ通知」参照)。
+create schema if not exists private;
+create table if not exists private.settings (key text primary key, value text not null);
+revoke all on schema private from public, anon, authenticated;
+revoke all on private.settings from public, anon, authenticated;
+
 -- ============ 1分ごとに送信プログラムを呼ぶ(pg_cron) ============
 do $$
 begin
@@ -267,7 +278,8 @@ begin
     perform cron.schedule('surf-iko-notify', '* * * * *', $cron$
       select net.http_post(
         url     := 'https://fxdqfbryqzfuuhabkpto.supabase.co/functions/v1/notify',
-        headers := '{"Content-Type":"application/json","x-notify-secret":"3fqpDnydPoJggUss4MED4PUI_lFGKeHe"}'::jsonb,
+        headers := jsonb_build_object('Content-Type', 'application/json',
+                     'x-notify-secret', coalesce((select value from private.settings where key = 'notify_secret'), '')),
         body    := '{}'::jsonb)
     $cron$);
   else

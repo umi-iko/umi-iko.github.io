@@ -824,7 +824,8 @@ function ymd(d){
 }
 function todayStr(){ return ymd(new Date()); }
 function fmtDate(s){
-  const [y,m,d] = s.split('-').map(Number);
+  if (!s) return '';
+  const [y,m,d] = String(s).split('-').map(Number);
   const w = ['日','月','火','水','木','金','土'][new Date(y, m-1, d).getDay()];
   return `${m}/${d}(${w})`;
 }
@@ -1072,6 +1073,11 @@ async function confirmLogout(){
 }
 async function doLogout(){
   closeModal(); spin(true);
+  // この端末の通知登録を外す(次に使う人に前の人の通知が届かないように)
+  try {
+    const sub = await currentPushSubscription();
+    if (sub) { await sb.rpc('remove_push_subscription', { p_endpoint: sub.endpoint }); try { await sub.unsubscribe(); } catch (e) {} }
+  } catch (e) {}
   // 開いていたトリップページ・募集ページを閉じて、次の人はカレンダーから始まるようにする
   stopPostPolling(); state.tripPageId = null; state.recruitPageId = null;
   $('view-trip').classList.add('hidden'); $('view-recruit').classList.add('hidden');
@@ -1137,7 +1143,9 @@ function visibleMemberIds(){
   return [...ids];
 }
 
+let monthReq = 0;
 async function loadMonth(){
+  const req = ++monthReq;   // 連打しても最後の読み込みだけを使う
   // トリップは件数が少ないので全期間をまとめて読む(上の要約で月をまたいで使う)
   const first = new Date(state.calYear, state.calMonth, 1);
   const last  = new Date(state.calYear, state.calMonth + 1, 0);
@@ -1146,6 +1154,7 @@ async function loadMonth(){
       sb.from('trip_availability').select('member_id,date,intent,note').eq('trip_id', tripIdOf(state.genre)),
       sb.from('surf_log').select('date,source,went,trip_id').eq('source', 'trip').eq('trip_id', tripIdOf(state.genre)),
     ]);
+    if (req !== monthReq) return;
     if (error) { toast('回答の読み込みに失敗しました', true); return; }
     state.tripRows = data || [];
     state.monthLog = log || [];
@@ -1156,6 +1165,7 @@ async function loadMonth(){
       .gte('date', ymd(first)).lte('date', ymd(last)).in('member_id', visibleMemberIds()),
     sb.from('surf_log').select('date,source,went').gte('date', ymd(first)).lte('date', ymd(last)),
   ]);
+  if (req !== monthReq) return;
   if (error) { toast('予定の読み込みに失敗しました', true); return; }
   state.monthRows = data || [];
   state.monthLog = log || [];
@@ -1263,8 +1273,10 @@ function toRanges(sortedDates){
   return out;
 }
 function rangeLabel([a, b]){
+  if (!a) return '日程未定';
+  if (!b || a === b) return `${fmtDate(a)} 1日`;
   const days = Math.round((new Date(b) - new Date(a)) / 86400000) + 1;
-  return a === b ? `${fmtDate(a)} 1日` : `${fmtDate(a)}〜${fmtDate(b)} ${days}日間`;
+  return `${fmtDate(a)}〜${fmtDate(b)} ${days}日間`;
 }
 function tripStats(trip){
   const byDate = {};
@@ -1508,8 +1520,9 @@ $('cal-grid').addEventListener('pointerdown', (e) => {
   const ds = cell.dataset.date;
   const { mine } = dayMap();
 
-  // 閲覧モード → その日のみんなの予定シート
-  if (!state.paint) { openDaySheet(ds); return; }
+  // 閲覧モード → 指を離したとき(スワイプでなければ)その日のみんなの予定シート
+  if (!state.paint) { stroke.tapDay = ds; stroke.tapX = e.clientX; stroke.tapY = e.clientY; return; }
+  stroke.tapDay = null;
 
   e.preventDefault();
   try { $('cal-grid').setPointerCapture(e.pointerId); } catch (err) {}
@@ -1547,8 +1560,14 @@ $('cal-grid').addEventListener('pointermove', (e) => {
   if (cell) applyStrokeToCell(cell, cell.dataset.date);
 });
 
-async function endStroke(){
+async function endStroke(e){
   clearTimeout(stroke.longTimer);
+  if (stroke.tapDay && e && e.type === 'pointerup') {
+    const ds = stroke.tapDay; stroke.tapDay = null;
+    if (Math.abs(e.clientX - stroke.tapX) < 12 && Math.abs(e.clientY - stroke.tapY) < 12) openDaySheet(ds);
+    return;
+  }
+  stroke.tapDay = null;
   if (!stroke.active || stroke.cancelled) { stroke.active = false; return; }
   stroke.active = false;
   if (stroke.days.size === 0) return;
@@ -1628,9 +1647,12 @@ async function commitStroke(){
     if (rows.length) ({ error } = await sb.from(tg.table).upsert(rows, { onConflict: tg.conflict }));
   } else {
     // 消しゴム: 未来は予定を消す / 過去は「行かなかった」にして予定も消す
-    if (future.length) ({ error } = await sb.from(tg.table).delete()
-      .eq('member_id', state.me.id).eq(tg.key, tg.val).in('date', future));
-    if (!error && past.length) {
+    // 同じ行き方をもう一度なぞって消すときは、その行き方の日だけ消す(他の色は残す)
+    const sameOnly = state.paint && state.paint !== 'eraser';
+    let q = sb.from(tg.table).delete().eq('member_id', state.me.id).eq(tg.key, tg.val).in('date', future);
+    if (sameOnly) q = q.eq('intent', state.paint);
+    if (future.length) ({ error } = await q);
+    if (!error && past.length && !sameOnly) {
       ({ error } = await sb.rpc('unmark_went', { p_source: src, p_dates: past }));
       if (!error && !isTrip(genre)) await sb.from(tg.table).delete()
         .eq('member_id', state.me.id).eq(tg.key, tg.val).in('date', past);
@@ -1892,9 +1914,19 @@ async function saveMemo(genre, dates){
   const note = $('memo-input').value.trim() || null;
   const tg = availTarget(genre);
   spin(true);
-  const { error } = await sb.from(tg.table)
+  const { mine } = dayMap();
+  const missing = dates.filter(d => !mine[d]);
+  let error = null;
+  if (missing.length && state.paint && state.paint !== 'eraser' && state.paint !== 'went') {
+    // まだ色がついていない日は、選んでいる行き方で予定ごと作る
+    ({ error } = await sb.from(tg.table).upsert(
+      missing.map(d => ({ member_id: state.me.id, [tg.key]: tg.val, date: d, intent: state.paint, note })),
+      { onConflict: tg.conflict }));
+  }
+  const existing = dates.filter(d => mine[d]);
+  if (!error && existing.length) ({ error } = await sb.from(tg.table)
     .update({ note })
-    .eq('member_id', state.me.id).eq(tg.key, tg.val).in('date', dates);
+    .eq('member_id', state.me.id).eq(tg.key, tg.val).in('date', existing));
   spin(false);
   if (error) { toast('メモの保存に失敗しました', true); return; }
   closeSheet();
@@ -1983,10 +2015,13 @@ async function doUnconfirmTrip(id){
 }
 
 /* ---------- トリップページ ---------- */
+function hideAllViews(){
+  for (const v of ['view-cal','view-nakama','view-jibun','view-member-detail','view-trip','view-recruit']) $(v).classList.add('hidden');
+}
 async function openTripPage(id){
   state.tripPageId = id;
   hideBulkMemoBar();
-  $('view-cal').classList.add('hidden');
+  hideAllViews();
   $('view-trip').classList.remove('hidden');
   renderTripPageHead();
   renderTripNotes();
@@ -1995,11 +2030,16 @@ async function openTripPage(id){
   await loadTripPosts(false);
   startPostPolling();
 }
+function markTab(tab){
+  state.tab = tab;
+  for (const t of ['cal','nakama','jibun']) $(`tab-${t}`).classList.toggle('active', t === tab);
+}
 function closeTripPage(){
   stopPostPolling();
   state.tripPageId = null;
-  $('view-trip').classList.add('hidden');
+  hideAllViews();
   $('view-cal').classList.remove('hidden');
+  markTab('cal');
   renderGenreTabs(); renderCalendar();
 }
 function tripOfPage(){ return tripById(state.tripPageId); }
@@ -2243,8 +2283,7 @@ async function openRecruitPage(id){
   if (!r) { toast('この募集は終了しました'); renderGenreTabs(); return; }
   state.recruitPageId = id;
   rcPick = r.my_status === 'invited' ? null : r.my_status;
-  $('view-cal').classList.add('hidden');
-  $('view-trip').classList.add('hidden');
+  hideAllViews();
   $('view-recruit').classList.remove('hidden');
   renderGenreTabs();
   const closed = !r.recruit_open || (r.recruit_deadline && r.recruit_deadline < todayStr());
@@ -2290,8 +2329,9 @@ async function submitRecruit(id){
 }
 function closeRecruitPage(){
   state.recruitPageId = null;
-  $('view-recruit').classList.add('hidden');
+  hideAllViews();
   $('view-cal').classList.remove('hidden');
+  markTab('cal');
   renderGenreTabs();
 }
 
@@ -2662,7 +2702,7 @@ async function openMemberDetail(id){
     $('md-name').innerHTML = `${esc(m.name)} の予定`;
     $('md-body').innerHTML = `<div class="card"><p class="sub">${esc(m.name)} さんはまだ予定を見せていません。<br>
       見せてもらうと、こことカレンダーに表示されます。</p></div>`;
-    $('view-nakama').classList.add('hidden');
+    hideAllViews();
     $('view-member-detail').classList.remove('hidden');
     return;
   }
@@ -2700,7 +2740,7 @@ async function openMemberDetail(id){
   }
   $('md-body').innerHTML = body ||
     '<div class="card"><p class="sub">今月と来月の予定はまだありません</p></div>';
-  $('view-nakama').classList.add('hidden');
+  hideAllViews();
   $('view-member-detail').classList.remove('hidden');
   window.scrollTo(0, 0);
 }

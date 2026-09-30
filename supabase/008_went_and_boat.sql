@@ -291,15 +291,21 @@ end;
 $$;
 
 -- 声をかけられた人: 自分宛ての募集の一覧(コアメンバーや他の回答者は含めない)
--- 009 で戻り値の列が増えるので、再実行時のために一度消してから作り直す
-drop function if exists public.my_recruits();
+-- my_recruits は 009 で列が増えるので、まだ無いときだけここで作る(再実行しても 009 の形を壊さない)
+do $outer$
+begin
+  if exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+              where n.nspname = 'public' and p.proname = 'my_recruits') then
+    return;
+  end if;
+  execute $fn$
 create or replace function public.my_recruits()
 returns table (trip_id uuid, name text, confirmed_start date, confirmed_end date, capacity int, remaining int,
                recruit_open boolean, recruit_deadline date, my_status text, my_comment text,
                my_result text, waitlist_order int, joined boolean)
 language sql stable security definer
 set search_path = public
-as $$
+as $body$
   select t.id, t.name, t.confirmed_start, t.confirmed_end, t.capacity, public.trip_remaining(t.id),
          t.recruit_open, t.recruit_deadline, i.status, i.comment, i.result, i.waitlist_order,
          exists (select 1 from public.trip_members tm where tm.trip_id = t.id and tm.member_id = i.member_id)
@@ -307,7 +313,9 @@ as $$
    where i.member_id = public.current_member_id()
      and (t.recruit_open or i.result is not null)
    order by t.confirmed_start;
-$$;
+$body$;
+  $fn$;
+end $outer$;
 
 -- 声をかけられた人: 回答する(期限内・募集中だけ)
 create or replace function public.respond_recruit(p_trip uuid, p_status text, p_comment text)
