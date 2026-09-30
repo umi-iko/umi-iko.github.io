@@ -303,6 +303,17 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 .help-fig img{max-width:100%; width:260px; border-radius:12px; border:1px solid #D9CFB8; box-shadow:0 2px 8px rgba(31,78,140,.12); display:block; height:auto;}
 .help-fig.two img{width:calc(50% - 5px);}
 .help-svg{width:100%; max-width:340px; height:auto; display:block;}
+.intro-list{margin:6px 0 14px; padding:0; list-style:none;}
+.intro-list li{display:flex; gap:12px; align-items:flex-start; background:var(--card); border-radius:14px; padding:12px 14px; margin-bottom:8px;
+  box-shadow:0 1px 3px rgba(31,78,140,.08); text-align:left;}
+.intro-list .ii{flex:none; width:40px; height:40px; border-radius:50%; background:#E4ECF6; color:#1F4E8C; display:flex; align-items:center; justify-content:center;}
+.intro-list .ii svg{width:22px; height:22px; stroke:#1F4E8C;}
+.intro-list b{display:block; font-size:1rem; margin-bottom:2px;}
+.intro-list span.d{color:var(--sub); font-size:.9rem; line-height:1.5;}
+#intro-screen{position:fixed; inset:0; background:var(--bg); z-index:70; overflow-y:auto; padding:calc(24px + env(safe-area-inset-top)) 16px calc(24px + var(--safe-bottom));}
+#intro-screen .inner{max-width:420px; margin:0 auto; text-align:center;}
+#intro-screen h1{font-size:1.4rem; margin:6px 0 4px;}
+#intro-screen .lead{color:var(--sub); margin:0 0 16px;}
 .help-inner .sw{display:inline-block; width:1em; height:1em; border-radius:50%; vertical-align:-2px; margin-right:4px;}
 </style>
 </head>
@@ -319,6 +330,7 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M8 15h3"/></symbol>
   <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.5"/><path d="M2.5 20c.5-4 3.5-6 6.5-6s6 2 6.5 6M15.5 20c.3-2.5 2-4 4.5-4 1 0 1.7.2 2 .4"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21a2 2 0 004 0"/></symbol>
   <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.5-4.5 4-7 7.5-7s7 2.5 7.5 7"/></symbol>
 </svg>
 <div id="spinner"><div class="spin"></div></div>
@@ -333,21 +345,22 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
   </div>
   <div id="login-step-name">
     <div class="card">
-      <h2>自分の名前を入れてね</h2>
+      <h2>名前を入力</h2>
       <input class="field" id="login-name" placeholder="登録した名前" maxlength="20"
         autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
       <button class="btn" style="margin-top:12px" onclick="goToPin()">次へ</button>
       <div class="pin-error" id="name-error"></div>
     </div>
     <button class="btn secondary" onclick="showRegister()">招待コードで新しく登録する</button>
-    <p class="sub" style="text-align:center">名前やPINがわからないときは、アプリに誘ってくれた人に聞いてください</p>
+    <p class="sub" style="text-align:center; margin-top:14px"><a href="#" onclick="openIntro(); return false;" style="color:var(--accent); font-weight:600">このアプリでできること</a></p>
+    <p class="sub" style="text-align:center">名前やPINが分からない場合は、招待してくれた人に確認してください</p>
   </div>
   <div id="login-step-register" class="hidden">
     <div class="card">
-      <h2>はじめての登録</h2>
-      <label class="sub">招待コード(誘ってくれた人に聞いてね)</label>
+      <h2>新規登録</h2>
+      <label class="sub">招待コード(招待してくれた人から受け取ったもの)</label>
       <input class="field" id="reg-code" maxlength="30" autocapitalize="characters" autocorrect="off" spellcheck="false" style="margin:4px 0 12px">
-      <label class="sub">名前(みんなに表示されます。ニックネームでOK)</label>
+      <label class="sub">名前(仲間に表示されます。ニックネーム可)</label>
       <input class="field" id="reg-name" maxlength="20" autocorrect="off" spellcheck="false" style="margin:4px 0 12px">
       <label class="sub">PIN(6桁の数字。ログインに使います)</label>
       <input class="field" id="reg-pin" type="password" inputmode="numeric" maxlength="6" style="margin:4px 0 12px">
@@ -360,14 +373,14 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
   </div>
   <div id="login-step-pin" class="hidden">
     <div class="card">
-      <h2 id="pin-title">PINを入れてね</h2>
+      <h2 id="pin-title">PINを入力</h2>
       <div id="pin-boxes">
         <div class="pin-box"></div><div class="pin-box"></div><div class="pin-box"></div>
         <div class="pin-box"></div><div class="pin-box"></div><div class="pin-box"></div>
       </div>
       <div class="pin-error" id="pin-error"></div>
       <div id="pin-pad"></div>
-      <button class="btn secondary" style="margin-top:16px" onclick="backToNames()">← 名前を入れ直す</button>
+      <button class="btn secondary" style="margin-top:16px" onclick="backToNames()">← 名前を入力し直す</button>
     </div>
   </div>
 </div>
@@ -482,6 +495,25 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
   </div>
 </div>
 
+<!-- ============ はじめに(初回だけ表示) ============ -->
+<div id="intro-screen" class="hidden">
+  <div class="inner">
+    <img src="icons/icon-192.png" alt="" style="width:84px; height:84px; border-radius:20px; box-shadow:0 2px 8px rgba(31,78,140,.15)">
+    <h1>サーフィン行こ</h1>
+    <p class="lead">仲間と「いつ海に行くか」を共有するアプリです</p>
+    <ul class="intro-list">
+      <li><span class="ii"><svg class="ic"><use href="#i-people"/></svg></span>
+        <div><b>仲間の予定が見える</b><span class="d">誰がいつ海に行くかがカレンダーで分かるので、みんなが行くタイミングに合わせて海に行けます。</span></div></li>
+      <li><span class="ii"><svg class="ic"><use href="#i-plane"/></svg></span>
+        <div><b>トリップの日程を合わせられる</b><span class="d">海外や船のトリップは、メンバー全員で行ける日を出し合って日程を決められます。</span></div></li>
+      <li><span class="ii"><svg class="ic"><use href="#i-bell"/></svg></span>
+        <div><b>仲間の動きを通知で知れる</b><span class="d">よく一緒に行く人が「海に行く」と登録したら、スマートフォンに通知が届きます。</span></div></li>
+    </ul>
+    <button class="btn" onclick="closeIntro()">はじめる</button>
+    <button class="btn secondary" style="margin-top:10px" onclick="closeIntro(); openHelp()">くわしい使い方を見る</button>
+  </div>
+</div>
+
 <!-- ============ 使い方(ヘルプ) ============ -->
 <div id="help-screen" class="hidden">
   <div class="help-top">
@@ -494,12 +526,14 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
     <details open>
       <summary><span class="no">1</span>このアプリでできること</summary>
       <div class="hb">
-        <p>「サーフィン行こ」は、仲間内で<b>「いつ海に行けるか」</b>を共有するためのカレンダーです。</p>
-        <ul>
-          <li>自分が行ける日を、カレンダーを指でなぞって登録する</li>
-          <li>仲間が行ける日が、日付の中の点(●)で分かる</li>
-          <li>海外遠征やボートトリップの日程調整、参加者限定の掲示板</li>
-          <li>仲間が予定を入れたときなどに、スマートフォンへ通知</li>
+        <p>「サーフィン行こ」は、仲間内で<b>「いつ海に行くか」</b>を共有するアプリです。できることは大きく3つです。</p>
+        <ul class="intro-list">
+          <li><span class="ii"><svg class="ic"><use href="#i-people"/></svg></span>
+            <div><b>仲間の予定が見える</b><span class="d">誰がいつ海に行くかがカレンダーで分かるので、みんなが行くタイミングに合わせて海に行けます。</span></div></li>
+          <li><span class="ii"><svg class="ic"><use href="#i-plane"/></svg></span>
+            <div><b>トリップの日程を合わせられる</b><span class="d">海外や船のトリップは、メンバー全員で行ける日を出し合って日程を決められます。参加者限定の掲示板としおりも使えます。</span></div></li>
+          <li><span class="ii"><svg class="ic"><use href="#i-bell"/></svg></span>
+            <div><b>仲間の動きを通知で知れる</b><span class="d">よく一緒に行く人が「海に行く」と登録したら、スマートフォンに通知が届きます。誰の、どの予定を通知するかは自分で選べます。</span></div></li>
         </ul>
         <p class="tip">利用は無料です。登録するのは名前とPIN(6桁の数字)だけで、電話番号やメールアドレスは使いません。</p>
       </div>
@@ -921,6 +955,7 @@ async function boot(){
 async function showLogin(){
   $('app').classList.add('hidden');
   $('login-screen').classList.remove('hidden');
+  maybeShowIntro();
   $('login-step-name').classList.remove('hidden');
   $('login-step-pin').classList.add('hidden');
   $('login-step-register').classList.add('hidden');
@@ -972,10 +1007,10 @@ async function submitRegister(){
   try { localStorage.setItem('surf-iko:last-name', m.name); } catch (e) {}
   await enterApp({ id: m.id, name: m.name, is_admin: m.is_admin });
   openModal(`
-    <h2>ようこそ、${esc(m.name)} さん!</h2>
+    <h2>${esc(m.name)} さん、登録が完了しました</h2>
     <p class="sub">次からは、名前「${esc(m.name)}」と今決めたPINでログインします。</p>
     <p class="sub">あなたの海・プール・海外の予定は、まだ誰にも見えていません。<br>
-      「仲間」タブの<b>「見せる」</b>で、見せたい人を選んでね。</p>
+      「仲間」タブの<b>「見せる」</b>で、見せる相手を選んでください。</p>
     <button class="btn" onclick="closeModal(); showTab('nakama')">仲間タブを開く</button>
     <button class="btn secondary" onclick="closeModal()">あとで</button>
   `);
@@ -988,7 +1023,7 @@ function goToPin(){
   $('login-name').blur();
   state.loginMember = { name };
   state.pinDigits = '';
-  $('pin-title').textContent = `${name} さんのPINを入れてね`;
+  $('pin-title').textContent = `${name} さんのPINを入力`;
   $('pin-error').textContent = '';
   renderPinPad();
   renderPinBoxes();
@@ -1282,9 +1317,9 @@ function renderPalette(){
        onclick="setPaint('eraser')">🧽 消しゴム</button>`;
   $('palette').innerHTML = html;
   $('paint-hint').textContent =
-    state.paint === 'eraser' ? '消したい日をなぞってね(過去の日は「行かなかった」になります)' :
-    state.paint === 'went' ? '実際に行った日(過去)をなぞってね。もう一度なぞると取り消し' :
-    state.paint ? `「${intentDef(state.genre, state.paint).label}」にする日をなぞってね(もう一度なぞると取り消し)` :
+    state.paint === 'eraser' ? '消したい日をなぞってください(過去の日は「行かなかった」になります)' :
+    state.paint === 'went' ? '実際に行った日(過去)をなぞってください。もう一度なぞると取り消し' :
+    state.paint ? `「${intentDef(state.genre, state.paint).label}」にする日をなぞってください(もう一度なぞると取り消し)` :
     '上のボタンをどれか選ぶと、なぞった日に予定が入ります。今は日付タップでみんなの予定が見られます';
 }
 function setPaint(key){
@@ -1838,7 +1873,7 @@ async function submitTripCreate(){
   spin(false);
   if (error) { console.error(error); toast('作成に失敗しました', true); return; }
   closeSheet();
-  toast(`「${name}」を作りました。行ける日を塗ってね`);
+  toast(`「${name}」を作りました。行ける日をなぞって登録してください`);
   await refreshSocial();
   await setGenre('trip:' + data);
 }
@@ -2019,7 +2054,7 @@ function openConfirmTrip(start, end){
 async function submitConfirmTrip(id){
   const a = $('cf-start').value, b = $('cf-end').value;
   if (!a || !b) { $('cf-error').textContent = '日付を選んでください'; return; }
-  if (b < a) { $('cf-error').textContent = 'おわりは、はじまりより後にしてください'; return; }
+  if (b < a) { $('cf-error').textContent = '終了日は開始日より後にしてください'; return; }
   spin(true);
   const { error } = await sb.rpc('confirm_trip', { p_trip: id, p_start: a, p_end: b });
   spin(false);
@@ -2519,7 +2554,7 @@ async function disablePush(){
 }
 async function sendTestNotification(){
   const { error } = await sb.rpc('send_test_notification');
-  toast(error ? '送れませんでした' : 'テスト通知を送りました。1分以内に届きます(アプリを閉じて待ってみてね)', !!error);
+  toast(error ? '送れませんでした' : 'テスト通知を送りました。1分以内に届きます(アプリを閉じて待つと確認しやすいです)', !!error);
 }
 async function setNotifyMode(mode){
   await sb.from('notify_settings').upsert({ member_id: state.me.id, mode, updated_at: new Date().toISOString() }, { onConflict: 'member_id' });
@@ -2806,10 +2841,10 @@ async function renderJibun(){
 /* ---------- 招待コード(管理者) ---------- */
 function inviteUrl(code){ return location.origin + location.pathname + '?invite=' + encodeURIComponent(code); }
 function inviteText(code){
-  return `🌊「サーフィン行こ」に招待します!\n` +
+  return `🌊「サーフィン行こ」に招待します\n` +
     `① このリンクをSafariで開く\n${inviteUrl(code)}\n` +
     `② 名前と6桁のPINを決めて登録\n` +
-    `③ 共有ボタン→「ホーム画面に追加」でアプリになるよ\n` +
+    `③ 共有ボタン→「ホーム画面に追加」でアプリとして使えます\n` +
     `(招待コード: ${code})`;
 }
 async function renderInvite(){
@@ -2851,9 +2886,9 @@ async function setInvite(mode){
 async function copyInvite(){
   if (!state.inviteCode) return;
   const text = inviteText(state.inviteCode);
-  try { await navigator.clipboard.writeText(text); toast('コピーしました。LINEなどに貼り付けてね'); }
+  try { await navigator.clipboard.writeText(text); toast('コピーしました。LINEなどに貼り付けて送ってください'); }
   catch (e) {
-    openModal(`<h2>招待メッセージ</h2><p class="sub">長押しでコピーしてね</p>
+    openModal(`<h2>招待メッセージ</h2><p class="sub">長押しでコピーしてください</p>
       <textarea class="field" rows="8" readonly>${esc(text)}</textarea>
       <button class="btn secondary" onclick="closeModal()">閉じる</button>`);
   }
@@ -2911,7 +2946,7 @@ async function adminAddMember(){
     return;
   }
   $('add-name').value = ''; $('add-pin').value = '';
-  toast(`${name} さんを追加しました。名前と初期PINを本人に伝えてね`);
+  toast(`${name} さんを追加しました。名前と初期PINを本人に伝えてください`);
   await renderJibun();
 }
 
@@ -2963,6 +2998,18 @@ function openModal(html){
   $('modal-back').classList.remove('hidden');
 }
 function closeModal(){ $('modal-back').classList.add('hidden'); }
+
+/* ---------- はじめに(初回だけ) ---------- */
+function openIntro(){ $('intro-screen').classList.remove('hidden'); $('intro-screen').scrollTop = 0; }
+function closeIntro(){
+  $('intro-screen').classList.add('hidden');
+  try { localStorage.setItem('surf-iko:intro-seen', '1'); } catch (e) {}
+}
+function maybeShowIntro(){
+  let seen = '1';
+  try { seen = localStorage.getItem('surf-iko:intro-seen') || ''; } catch (e) {}
+  if (!seen) openIntro();
+}
 
 /* ---------- 使い方(ヘルプ) ---------- */
 function openHelp(){
