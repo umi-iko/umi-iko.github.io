@@ -88,7 +88,7 @@ surf-iko/
 1. リポジトリの **Settings** タブ → 左メニューの **Pages**
 2. 「Build and deployment」の **Branch** で `main` を選び、フォルダは `/ (root)` のまま **Save**
 3. 1〜2分待ってページを再読み込みすると、上に公開URLが出ます
-   (`https://ユーザー名.github.io/surf-iko/` の形)
+   (このアプリは `https://umi-iko.github.io/`)
 
 ### ステップ6 自動ping用のSecretsを登録する
 
@@ -127,7 +127,7 @@ Supabase無料プランは、しばらく使わないと一時停止します。
 ```
 🌊「サーフィン行こ」はじめました!
 ① このURLをSafariで開いて、共有ボタン→「ホーム画面に追加」
-   https://(公開URL)
+   https://umi-iko.github.io/
 ② 自分の名前を選んで、PIN「(初期PIN)」でログイン
 ③ 絵の具を選んで、行ける日をカレンダーで指でなぞるだけ!
 ```
