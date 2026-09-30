@@ -104,10 +104,30 @@ h2{font-size:1.05rem; margin:0 0 10px;}
   border-radius:50%; margin-left:6px; vertical-align:middle;}
 
 /* ================= ジャンルタブ ================= */
-#genre-tabs{display:flex; gap:8px; margin-bottom:10px;}
-#genre-tabs button{flex:1; min-height:44px; border-radius:12px; background:#fff; font-weight:600;
-  border:1.5px solid var(--line); color:var(--sub);}
+#genre-tabs{display:flex; gap:8px; margin-bottom:10px; overflow-x:auto; padding:2px 2px 6px;
+  -webkit-overflow-scrolling:touch;}
+#genre-tabs button{flex:0 0 auto; min-width:82px; min-height:44px; padding:0 14px; border-radius:12px;
+  background:#fff; font-weight:600; border:1.5px solid var(--line); color:var(--sub); white-space:nowrap;}
 #genre-tabs button.active{background:var(--accent); border-color:var(--accent); color:#fff;}
+#genre-tabs button.trip-tab{border-style:dashed; border-color:#B9A9E6; color:#6E4FBF;}
+#genre-tabs button.trip-tab.active{background:#6E4FBF; border-color:#6E4FBF; border-style:solid; color:#fff;}
+#genre-tabs button.trip-add{min-width:44px; padding:0; font-size:1.3rem; color:#6E4FBF; border-color:#B9A9E6;}
+
+/* トリップの要約カード */
+#trip-summary{background:#fff; border-radius:14px; padding:12px 14px; margin-bottom:10px;
+  box-shadow:0 1px 3px rgba(30,60,80,.06); border-left:4px solid #6E4FBF;}
+#trip-summary .t-line{margin-top:6px; font-size:.9rem; line-height:1.5;}
+#trip-summary .t-range{display:inline-block; background:#FFF4D6; border:1px solid #F2B01E; color:#7A5A00;
+  border-radius:8px; padding:2px 8px; margin:3px 4px 0 0; font-weight:600;}
+#trip-summary .t-range.ok{background:#F7F5FC; border-color:#B9A9E6; color:#4B3A85; font-weight:500;}
+#trip-summary .t-btn{color:#6E4FBF; font-weight:600; min-height:36px; padding:0 8px; font-size:.85rem;}
+/* 全員OKの日の目印 */
+.day.all-free{box-shadow:inset 0 0 0 2.5px #F2B01E;}
+.day.all-free::after{content:'★'; position:absolute; top:1px; left:3px; font-size:.62rem; color:#F2B01E; z-index:1;}
+.day.all-ok{box-shadow:inset 0 0 0 2px #C9B8F0;}
+.day.all-ok::after{content:'☆'; position:absolute; top:1px; left:3px; font-size:.62rem; color:#8E74D6; z-index:1;}
+.trip-member-row{display:flex; align-items:center; gap:10px; min-height:48px; border-bottom:1px solid var(--line);}
+.trip-member-row:last-child{border-bottom:none;}
 
 /* ================= 絵の具パレット ================= */
 #palette{display:flex; gap:8px; overflow-x:auto; padding:4px 2px 10px; -webkit-overflow-scrolling:touch;}
@@ -226,6 +246,7 @@ h2{font-size:1.05rem; margin:0 0 10px;}
     <div id="genre-tabs"></div>
     <div id="palette"></div>
     <div id="paint-hint"></div>
+    <div id="trip-summary" class="hidden"></div>
     <div id="cal-head">
       <button class="nav" id="btn-prev">‹</button>
       <div id="cal-title"></div>
@@ -334,9 +355,39 @@ const INTENTS = {
     ],
   },
 };
+/* トリップ調整帳の絵の具(全トリップ共通)。ジャンル名は 'trip:<id>' で扱う */
+const TRIP_DEF = {
+  label: 'トリップ', accent: '#6E4FBF', accentWeak: '#EEE9F8',
+  intents: [
+    { key: 'free',   label: '空いてる',         color: '#2E9E5B' },
+    { key: 'adjust', label: '調整すれば行ける', color: '#E0A62B' },
+    { key: 'no',     label: '行けない',         color: '#9AA7AE' },
+  ],
+};
+const isTrip = (g) => typeof g === 'string' && g.startsWith('trip:');
+const tripIdOf = (g) => g.slice(5);
+function tripById(id){ return state.trips.find(t => t.id === id); }
+function currentTrip(){ return isTrip(state.genre) ? tripById(tripIdOf(state.genre)) : null; }
+function genreDef(g){
+  if (isTrip(g)) { const t = tripById(tripIdOf(g)); return { ...TRIP_DEF, label: t ? t.name : 'トリップ' }; }
+  return INTENTS[g];
+}
 function intentDef(genre, key){
-  return (INTENTS[genre]?.intents || []).find(i => i.key === key)
+  return (genreDef(genre)?.intents || []).find(i => i.key === key)
       || { key, label: key, color: '#9AA7AE' };
+}
+/* 保存先テーブル(通常ジャンル / トリップ)の違いを吸収 */
+function availTarget(genre){
+  return isTrip(genre)
+    ? { table: 'trip_availability', key: 'trip_id', val: tripIdOf(genre), conflict: 'trip_id,member_id,date' }
+    : { table: 'availability',      key: 'genre',   val: genre,           conflict: 'member_id,genre,date' };
+}
+/* そのジャンルの、いま手元にある全行 */
+function rowsOf(genre){
+  return isTrip(genre) ? state.tripRows : state.monthRows.filter(r => r.genre === genre);
+}
+function myRow(genre, date){
+  return rowsOf(genre).find(r => r.member_id === state.me.id && r.date === date);
 }
 
 /* 仲間の色(バー・アイコン用)。member_id から安定的に決める */
@@ -355,6 +406,8 @@ const state = {
   paint: null,              // 選択中の絵の具キー('eraser' or intent key or null=閲覧)
   calYear: 0, calMonth: 0,  // 表示中の年月(monthは0始まり)
   monthRows: [],            // 表示月の availability 全行(全ジャンル)
+  trips: [],                // 自分が参加しているトリップ [{id,name,created_by,members:[id]}]
+  tripRows: [],             // 表示中トリップの回答 全行(全期間)
   members: [],              // 全メンバー
   follows: new Set(),       // 自分がフォロー中のID
   lastSeen: {},             // followee_id -> seen_at
@@ -388,7 +441,7 @@ function fmtDate(s){
   return `${m}/${d}(${w})`;
 }
 function setAccent(){
-  const g = INTENTS[state.genre];
+  const g = genreDef(state.genre);
   document.documentElement.style.setProperty('--accent', g.accent);
   document.documentElement.style.setProperty('--accent-weak', g.accentWeak);
 }
@@ -562,15 +615,21 @@ async function doLogout(){
    データ読み込み
 ===================================================================== */
 async function refreshSocial(){
-  const [{ data: members }, { data: follows }, { data: seen }] = await Promise.all([
+  const [{ data: members }, { data: follows }, { data: seen }, { data: trips }, { data: tms }] = await Promise.all([
     sb.from('members').select('id,name,is_admin,last_activity_at').order('name'),
     sb.from('follows').select('followee_id'),
     sb.from('last_seen').select('followee_id,seen_at'),
+    sb.from('trips').select('id,name,created_by,created_at').order('created_at'),
+    sb.from('trip_members').select('trip_id,member_id'),
   ]);
   state.members = members || [];
   state.follows = new Set((follows || []).map(f => f.followee_id));
   state.lastSeen = {};
   (seen || []).forEach(r => { state.lastSeen[r.followee_id] = r.seen_at; });
+  state.trips = (trips || []).map(t => ({
+    ...t, members: (tms || []).filter(m => m.trip_id === t.id).map(m => m.member_id) }));
+  // 表示中のトリップから外された/消された場合は海に戻す
+  if (isTrip(state.genre) && !currentTrip()) { state.genre = 'sea'; state.paint = null; setAccent(); }
 }
 
 function visibleMemberIds(){
@@ -580,6 +639,14 @@ function visibleMemberIds(){
 }
 
 async function loadMonth(){
+  // トリップは件数が少ないので全期間をまとめて読む(上の要約で月をまたいで使う)
+  if (isTrip(state.genre)) {
+    const { data, error } = await sb.from('trip_availability')
+      .select('member_id,date,intent,note').eq('trip_id', tripIdOf(state.genre));
+    if (error) { toast('回答の読み込みに失敗しました', true); return; }
+    state.tripRows = data || [];
+    return;
+  }
   const first = new Date(state.calYear, state.calMonth, 1);
   const last  = new Date(state.calYear, state.calMonth + 1, 0);
   let q = sb.from('availability')
@@ -594,6 +661,13 @@ async function loadMonth(){
 /* 表示月・現在ジャンルのデータを日付ごとに整理 */
 function dayMap(){
   const mine = {}, others = {};
+  if (isTrip(state.genre)) {
+    for (const r of state.tripRows) {
+      if (r.member_id === state.me.id) mine[r.date] = r;
+      else (others[r.date] = others[r.date] || []).push(r);
+    }
+    return { mine, others };
+  }
   for (const r of state.monthRows) {
     if (r.genre !== state.genre) continue;
     if (r.member_id === state.me.id) mine[r.date] = r;
@@ -609,21 +683,27 @@ function dayMap(){
    カレンダー描画
 ===================================================================== */
 function renderGenreTabs(){
-  $('genre-tabs').innerHTML = GENRES.map(g =>
-    `<button class="${g === state.genre ? 'active' : ''}" onclick="setGenre('${g}')">${INTENTS[g].label}</button>`
-  ).join('');
+  const base = GENRES.map(g =>
+    `<button class="${g === state.genre ? 'active' : ''}" onclick="setGenre('${g}')">${INTENTS[g].label}</button>`);
+  const trips = state.trips.map(t =>
+    `<button class="trip-tab ${state.genre === 'trip:' + t.id ? 'active' : ''}"
+       onclick="setGenre('trip:${t.id}')">✈️ ${esc(t.name)}</button>`);
+  const add = `<button class="trip-add" title="トリップを作る" onclick="openTripCreate()">＋</button>`;
+  $('genre-tabs').innerHTML = [...base, ...trips, add].join('');
+  const act = $('genre-tabs').querySelector('.active');
+  if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
-function setGenre(g){
+async function setGenre(g){
   state.genre = g;
   state.paint = null;
   setAccent();
   renderGenreTabs();
   renderPalette();
-  renderCalendar();
+  await reloadCalendar();
 }
 
 function renderPalette(){
-  const g = INTENTS[state.genre];
+  const g = genreDef(state.genre);
   let html = g.intents.map(i =>
     `<button class="chip ${state.paint === i.key ? 'selected' : ''}"
        style="background:${i.color}" onclick="setPaint('${i.key}')">${i.label}</button>`).join('');
@@ -640,9 +720,71 @@ function setPaint(key){
   renderPalette();
 }
 
+/* ---------- トリップの集計(全員OKの日・未回答) ---------- */
+function nextDay(s){ const [y,m,d] = s.split('-').map(Number); return ymd(new Date(y, m-1, d+1)); }
+function toRanges(sortedDates){
+  const out = []; let start = null, prev = null;
+  for (const d of sortedDates) {
+    if (start === null) { start = prev = d; continue; }
+    if (d === nextDay(prev)) { prev = d; } else { out.push([start, prev]); start = prev = d; }
+  }
+  if (start !== null) out.push([start, prev]);
+  return out;
+}
+function rangeLabel([a, b]){
+  const days = Math.round((new Date(b) - new Date(a)) / 86400000) + 1;
+  return a === b ? `${fmtDate(a)} 1日` : `${fmtDate(a)}〜${fmtDate(b)} ${days}日間`;
+}
+function tripStats(trip){
+  const byDate = {};
+  for (const r of state.tripRows) (byDate[r.date] = byDate[r.date] || {})[r.member_id] = r.intent;
+  const t = todayStr();
+  const allFree = [], allOk = [];
+  for (const [d, m] of Object.entries(byDate)) {
+    if (d < t) continue;
+    const vals = trip.members.map(id => m[id]);
+    if (vals.every(v => v === 'free')) allFree.push(d);
+    else if (vals.every(v => v === 'free' || v === 'adjust')) allOk.push(d);
+  }
+  allFree.sort(); allOk.sort();
+  const answered = new Set(state.tripRows.map(r => r.member_id));
+  const unanswered = trip.members.filter(id => !answered.has(id));
+  return { allFree: new Set(allFree), allOk: new Set(allOk),
+           freeRanges: toRanges(allFree), okRanges: toRanges(allOk), unanswered };
+}
+function memberName(id){ return state.members.find(m => m.id === id)?.name || '?'; }
+
+function renderTripSummary(trip, st){
+  const box = $('trip-summary');
+  if (!trip) { box.classList.add('hidden'); return; }
+  const owner = memberName(trip.created_by);
+  const free = st.freeRanges.length
+    ? st.freeRanges.map(r => `<span class="t-range">★ ${rangeLabel(r)}</span>`).join('')
+    : '<span class="sub">まだありません</span>';
+  const ok = st.okRanges.length
+    ? st.okRanges.map(r => `<span class="t-range ok">☆ ${rangeLabel(r)}</span>`).join('') : '';
+  const un = st.unanswered.length
+    ? `<div class="t-line sub">未回答: ${st.unanswered.map(memberName).map(esc).join('、')}</div>` : '';
+  box.innerHTML = `
+    <div class="row">
+      <b>✈️ ${esc(trip.name)}</b>
+      <span class="sub">参加 ${trip.members.length}人</span>
+      <div class="spacer"></div>
+      <button class="t-btn" onclick="openTripSettings('${trip.id}')">参加者・設定</button>
+    </div>
+    <div class="t-line"><b>全員が空いてる日</b><br>${free}</div>
+    ${ok ? `<div class="t-line"><span class="sub">調整すれば全員OK</span><br>${ok}</div>` : ''}
+    ${un}
+    <div class="t-line sub" style="font-size:.78rem">作成: ${esc(owner)}</div>`;
+  box.classList.remove('hidden');
+}
+
 function renderCalendar(){
   $('cal-title').textContent = `${state.calYear}年${state.calMonth + 1}月`;
   const { mine, others } = dayMap();
+  const trip = currentTrip();
+  const st = trip ? tripStats(trip) : null;
+  renderTripSummary(trip, st);
   const first = new Date(state.calYear, state.calMonth, 1);
   const daysInMonth = new Date(state.calYear, state.calMonth + 1, 0).getDate();
   const startDow = first.getDay();
@@ -663,13 +805,18 @@ function renderCalendar(){
     if (ds === tStr) cls.push('today');
     let style = '';
     if (my) { cls.push('painted'); style = `background:${intentDef(state.genre, my.intent).color}`; }
+    if (st) {
+      if (st.allFree.has(ds)) cls.push('all-free');
+      else if (st.allOk.has(ds)) cls.push('all-ok');
+    }
     // 仲間の予定は人数分の色点で表示(10人まで。超えたら +n)
+    // 通常ジャンル: 人ごとの色 / トリップ: 回答(空いてる・調整・行けない)の色
     let dots = '';
     if (oth.length) {
       const MAX_DOTS = 10;
       const show = oth.slice(0, MAX_DOTS);
       dots = `<div class="dots">${show.map(r =>
-        `<span class="dot" style="background:${memberColor(r.member_id)}"></span>`).join('')}${
+        `<span class="dot" style="background:${trip ? intentDef(state.genre, r.intent).color : memberColor(r.member_id)}"></span>`).join('')}${
         oth.length > MAX_DOTS ? `<span class="more">+${oth.length - MAX_DOTS}</span>` : ''}</div>`;
     }
     const noteMark = my && my.note ? '<span class="note-mark">📝</span>' : '';
@@ -683,10 +830,14 @@ function renderCalendar(){
   $('cal-grid').innerHTML = html;
 
   // 凡例
-  const g = INTENTS[state.genre];
+  const g = genreDef(state.genre);
   $('legend').innerHTML = g.intents.map(i =>
     `<span class="lg"><span class="sw" style="background:${i.color}"></span>${i.label}</span>`).join('')
-    + `<span class="lg"><span class="sw" style="background:#5581C9; border-radius:50%; width:8px; height:8px"></span>仲間の予定(1人=1つ・タップで名前)</span>`;
+    + (trip
+      ? `<span class="lg"><span style="color:#F2B01E">★</span>全員空いてる</span>
+         <span class="lg"><span style="color:#8E74D6">☆</span>調整すれば全員OK</span>
+         <span class="lg"><span class="sw" style="background:#2E9E5B; border-radius:50%; width:8px; height:8px"></span>点=仲間の回答(タップで名前)</span>`
+      : `<span class="lg"><span class="sw" style="background:#5581C9; border-radius:50%; width:8px; height:8px"></span>仲間の予定(1人=1つ・タップで名前)</span>`);
 }
 
 function moveMonth(diff){
@@ -794,18 +945,18 @@ function applyStrokeToCell(cell, ds){
 async function commitStroke(){
   const dates = [...stroke.days];
   const genre = state.genre;
+  const tg = availTarget(genre);
   let error = null;
   if (stroke.mode === 'paint') {
     const { mine } = dayMap();
     const rows = dates.map(d => ({
-      member_id: state.me.id, genre, date: d, intent: state.paint,
+      member_id: state.me.id, [tg.key]: tg.val, date: d, intent: state.paint,
       note: mine[d]?.note ?? null,      // 上書き時もメモは残す
     }));
-    ({ error } = await sb.from('availability')
-      .upsert(rows, { onConflict: 'member_id,genre,date' }));
+    ({ error } = await sb.from(tg.table).upsert(rows, { onConflict: tg.conflict }));
   } else {
-    ({ error } = await sb.from('availability').delete()
-      .eq('member_id', state.me.id).eq('genre', genre).in('date', dates));
+    ({ error } = await sb.from(tg.table).delete()
+      .eq('member_id', state.me.id).eq(tg.key, tg.val).in('date', dates));
   }
   if (error) {
     console.error(error);
@@ -856,16 +1007,21 @@ function closeSheet(){
 /* その日の予定一覧(閲覧モードでタップ) */
 function openDaySheet(ds, genre){
   genre = genre || state.genre;
-  const rows = state.monthRows.filter(r => r.date === ds && r.genre === genre
-    && (r.member_id === state.me.id || state.me.is_admin || state.follows.has(r.member_id)));
-  const gdef = INTENTS[genre];
-  const tabs = GENRES.map(g =>
+  const trip = isTrip(genre) ? tripById(tripIdOf(genre)) : null;
+  const rows = rowsOf(genre).filter(r => r.date === ds
+    && (trip || r.member_id === state.me.id || state.me.is_admin || state.follows.has(r.member_id)));
+  const gdef = genreDef(genre);
+  // トリップのときはジャンル切替なし。通常時は海/プール/海外を切替できる
+  const tabs = trip ? '' : GENRES.map(g =>
     `<button class="chip ${g === genre ? 'selected' : ''}"
        style="background:${INTENTS[g].accent}; opacity:${g===genre?1:.5}"
        onclick="openDaySheet('${ds}','${g}')">${INTENTS[g].label}</button>`).join('');
+  // トリップ: まだ回答していない参加者も並べる
+  const unanswered = trip
+    ? trip.members.filter(id => !rows.some(r => r.member_id === id)) : [];
   let list;
-  if (rows.length === 0) {
-    list = `<p class="sub" style="padding:16px 0">まだ誰も「${gdef.label}」の予定を入れていません</p>`;
+  if (rows.length === 0 && unanswered.length === 0) {
+    list = `<p class="sub" style="padding:16px 0">まだ誰も「${esc(gdef.label)}」の予定を入れていません</p>`;
   } else {
     list = rows.map(r => {
       const m = state.members.find(x => x.id === r.member_id);
@@ -882,25 +1038,136 @@ function openDaySheet(ds, genre){
             onclick="openMemoSheet('${genre}', ['${ds}'])">メモ</button>` : ''}
       </div>`;
     }).join('');
+    list += unanswered.map(id => `<div class="sheet-person" style="opacity:.6">
+        <div class="avatar" style="background:${memberColor(id)}">${esc(memberName(id)[0])}</div>
+        <div style="flex:1"><div><b>${esc(memberName(id))}</b>${id === state.me.id ? ' <span class="sub">(じぶん)</span>' : ''}</div>
+          <div class="sub" style="margin-top:4px">未回答</div></div>
+      </div>`).join('');
   }
   openSheet(`
-    <h2>${fmtDate(ds)} の予定</h2>
-    <div style="display:flex; gap:8px; margin:10px 0 6px">${tabs}</div>
+    <h2>${fmtDate(ds)} の${trip ? esc(trip.name) : '予定'}</h2>
+    ${tabs ? `<div style="display:flex; gap:8px; margin:10px 0 6px">${tabs}</div>` : ''}
     ${list}
   `);
 }
 
+/* =====================================================================
+   トリップ調整帳(作成・参加者・設定)
+===================================================================== */
+function memberChecklist(checkedIds, disabledId){
+  return state.members.filter(m => m.id !== disabledId).map(m => `
+    <label class="trip-member-row">
+      <input type="checkbox" class="check trip-mem" value="${m.id}" ${checkedIds.has(m.id) ? 'checked' : ''}>
+      <span class="avatar" style="background:${memberColor(m.id)}; width:32px; height:32px; font-size:.9rem">${esc(m.name[0])}</span>
+      <span>${esc(m.name)}</span>
+    </label>`).join('') || '<p class="sub">まだ他の仲間がいません</p>';
+}
+function checkedMemberIds(){
+  return [...document.querySelectorAll('.trip-mem:checked')].map(el => el.value);
+}
+
+function openTripCreate(){
+  openSheet(`
+    <h2>トリップの調整帳を作る</h2>
+    <p class="sub">参加者を選ぶと、その人たちにだけ表示されます。あなたは自動で参加者に入ります。</p>
+    <input class="field" id="trip-name" placeholder="名前(例: バリ 12月)" maxlength="30" style="margin:6px 0 12px">
+    <div class="sub" style="margin-bottom:4px">参加者</div>
+    <div style="max-height:40vh; overflow-y:auto">${memberChecklist(new Set(), state.me.id)}</div>
+    <button class="btn" style="margin-top:14px" onclick="submitTripCreate()">作る</button>
+    <button class="btn secondary" style="margin-top:8px" onclick="closeSheet()">やめる</button>
+  `);
+  setTimeout(() => $('trip-name').focus(), 100);
+}
+async function submitTripCreate(){
+  const name = $('trip-name').value.trim();
+  if (!name) { toast('名前を入れてください', true); return; }
+  const ids = checkedMemberIds();
+  spin(true);
+  const { data, error } = await sb.rpc('create_trip', { p_name: name, p_member_ids: ids });
+  spin(false);
+  if (error) { console.error(error); toast('作成に失敗しました', true); return; }
+  closeSheet();
+  toast(`「${name}」を作りました。空いてる日を塗ってね`);
+  await refreshSocial();
+  await setGenre('trip:' + data);
+}
+
+function openTripSettings(id){
+  const trip = tripById(id);
+  if (!trip) return;
+  const isOwner = trip.created_by === state.me.id || state.me.is_admin;
+  const list = isOwner
+    ? memberChecklist(new Set(trip.members), trip.created_by)
+    : trip.members.map(mid => `<div class="trip-member-row">
+        <span class="avatar" style="background:${memberColor(mid)}; width:32px; height:32px; font-size:.9rem">${esc(memberName(mid)[0])}</span>
+        <span>${esc(memberName(mid))}${mid === trip.created_by ? ' <span class="sub">(作成者)</span>' : ''}</span></div>`).join('');
+  openSheet(`
+    <h2>✈️ ${esc(trip.name)}</h2>
+    ${isOwner ? `
+      <div class="sub" style="margin-bottom:4px">名前</div>
+      <div class="row" style="margin-bottom:12px">
+        <input class="field" id="trip-rename" value="${esc(trip.name)}" maxlength="30">
+        <button class="btn secondary" style="width:auto; padding:0 14px" onclick="submitTripRename('${id}')">変更</button>
+      </div>
+      <div class="sub" style="margin-bottom:4px">参加者(作成者 ${esc(memberName(trip.created_by))} は常に含まれます)</div>
+      <div style="max-height:35vh; overflow-y:auto">${list}</div>
+      <button class="btn" style="margin-top:14px" onclick="submitTripMembers('${id}')">参加者を保存</button>
+      <button class="btn danger-outline" style="margin-top:10px" onclick="confirmTripDelete('${id}')">この調整帳を削除</button>`
+    : `
+      <div class="sub" style="margin-bottom:4px">参加者 ${trip.members.length}人</div>
+      ${list}
+      <p class="sub" style="margin-top:10px">参加者の変更や削除は、作成者(${esc(memberName(trip.created_by))})だけができます。</p>`}
+    <button class="btn secondary" style="margin-top:10px" onclick="closeSheet()">閉じる</button>
+  `);
+}
+async function submitTripRename(id){
+  const name = $('trip-rename').value.trim();
+  if (!name) { toast('名前を入れてください', true); return; }
+  const { error } = await sb.rpc('rename_trip', { p_trip: id, p_name: name });
+  if (error) { toast('変更に失敗しました', true); return; }
+  toast('名前を変更しました');
+  await refreshSocial(); renderGenreTabs(); renderCalendar();
+}
+async function submitTripMembers(id){
+  const ids = checkedMemberIds();
+  spin(true);
+  const { error } = await sb.rpc('set_trip_members', { p_trip: id, p_member_ids: ids });
+  spin(false);
+  if (error) { toast('保存に失敗しました', true); return; }
+  closeSheet();
+  toast('参加者を保存しました');
+  await refreshSocial();
+  await reloadCalendar();
+}
+function confirmTripDelete(id){
+  const trip = tripById(id);
+  closeSheet();
+  openModal(`
+    <h2>「${esc(trip.name)}」を削除しますか?</h2>
+    <p class="sub">みんなの回答もすべて消えます。元に戻せません。</p>
+    <button class="btn danger-outline" onclick="doTripDelete('${id}')">削除する</button>
+    <button class="btn secondary" onclick="closeModal()">やめる</button>
+  `);
+}
+async function doTripDelete(id){
+  closeModal(); spin(true);
+  const { error } = await sb.rpc('delete_trip', { p_trip: id });
+  spin(false);
+  if (error) { toast('削除に失敗しました', true); return; }
+  toast('削除しました');
+  await refreshSocial();
+  await setGenre('sea');
+}
+
 /* メモ入力シート */
 function openMemoSheet(genre, dates){
-  const { mine } = (genre === state.genre) ? dayMap() : { mine: {} };
-  const cur = state.monthRows.find(r =>
-    r.member_id === state.me.id && r.genre === genre && r.date === dates[0]);
+  const cur = myRow(genre, dates[0]);
   const label = dates.length === 1
     ? fmtDate(dates[0])
     : `${fmtDate(dates[0])} 〜 ${fmtDate(dates[dates.length-1])}(${dates.length}日分)`;
   openSheet(`
     <h2>一言メモ</h2>
-    <p class="sub">${label} / ${INTENTS[genre].label}</p>
+    <p class="sub">${label} / ${esc(genreDef(genre).label)}</p>
     <textarea class="field" id="memo-input" rows="3" maxlength="200"
       placeholder="例: 朝イチだけ・○○ポイント希望 など">${esc(cur?.note || '')}</textarea>
     <button class="btn" style="margin-top:12px"
@@ -911,10 +1178,11 @@ function openMemoSheet(genre, dates){
 }
 async function saveMemo(genre, dates){
   const note = $('memo-input').value.trim() || null;
+  const tg = availTarget(genre);
   spin(true);
-  const { error } = await sb.from('availability')
+  const { error } = await sb.from(tg.table)
     .update({ note })
-    .eq('member_id', state.me.id).eq('genre', genre).in('date', dates);
+    .eq('member_id', state.me.id).eq(tg.key, tg.val).in('date', dates);
   spin(false);
   if (error) { toast('メモの保存に失敗しました', true); return; }
   closeSheet();
@@ -935,7 +1203,7 @@ async function showTab(tab){
   $('view-member-detail').classList.add('hidden');
   if (tab === 'nakama') await renderNakama();
   if (tab === 'jibun') await renderJibun();
-  if (tab === 'cal') { await refreshSocial(); await loadMonth(); renderCalendar(); updateNakamaBadge(); }
+  if (tab === 'cal') { await refreshSocial(); renderGenreTabs(); await loadMonth(); renderCalendar(); updateNakamaBadge(); }
   window.scrollTo(0, 0);
 }
 
