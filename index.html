@@ -175,6 +175,9 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 .rank-no.top{font-size:1.3rem;}
 .rank-days{margin-left:auto; font-weight:800; font-size:1.1rem; white-space:nowrap;}
 .rank-days span{font-size:.8rem; font-weight:600; color:var(--sub);}
+.acct-links{display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin:4px 0 18px;}
+.acct-links button{font-size:.85rem; color:var(--accent); padding:8px 12px; border-radius:10px; background:transparent; min-height:40px;}
+.acct-links button:active{background:var(--accent-weak);}
 .stat-big{font-size:2.2rem; font-weight:800; line-height:1.1;}
 .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px; text-align:center;}
 .stat-grid div{background:var(--bg); border-radius:10px; padding:8px 2px;}
@@ -457,21 +460,10 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 
   <!-- 自分 -->
   <div id="view-jibun" class="screen hidden">
-    <h1>自分</h1>
-    <div class="card">
-      <div class="row"><h2 id="my-name" style="margin:0"></h2><div class="spacer"></div>
-        <span class="sub" id="my-role"></span></div>
-      <button class="btn secondary" style="margin-top:14px" onclick="openPinChange('normal')">PINを変える</button>
-      <button class="btn secondary" style="margin-top:10px" onclick="confirmLogout()">ログアウト</button>
-      <button class="btn secondary" style="margin-top:10px" onclick="openHelp()">📖 使い方を見る</button>
-    </div>
-    <div class="card" id="profile-card">
-      <h2>🙋 プロフィール</h2>
-      <div id="profile-body"></div>
-    </div>
-    <div class="card" id="notify-card">
-      <h2>🔔 通知</h2>
-      <div id="notify-body"><p class="sub">読み込み中…</p></div>
+    <div class="row" style="margin:10px 0 12px; align-items:baseline">
+      <h1 style="margin:0">自分</h1>
+      <span class="sub" id="my-name" style="margin-left:10px; font-weight:600"></span>
+      <span class="sub" id="my-role" style="margin-left:6px"></span>
     </div>
     <div class="card" id="surf-record">
       <h2>🏄 サーフィン記録</h2>
@@ -484,6 +476,19 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
           <button data-scope="all" onclick="setRankScope('all')">累計</button>
         </div></div>
       <div id="ranking-body"><p class="sub">読み込み中…</p></div>
+    </div>
+    <div class="card" id="profile-card">
+      <h2>🙋 プロフィール</h2>
+      <div id="profile-body"></div>
+    </div>
+    <div class="card" id="notify-card">
+      <h2>🔔 通知</h2>
+      <div id="notify-body"><p class="sub">読み込み中…</p></div>
+    </div>
+    <div class="acct-links">
+      <button onclick="openHelp()">📖 使い方</button>
+      <button onclick="openPinChange('normal')">PINを変える</button>
+      <button onclick="confirmLogout()">ログアウト</button>
     </div>
     <div class="card hidden" id="admin-card">
       <h2>管理者メニュー</h2>
