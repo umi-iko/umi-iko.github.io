@@ -222,10 +222,13 @@ h2{font-size:1.05rem; margin:0 0 10px;}
   </div>
   <div id="login-step-name">
     <div class="card">
-      <h2>じぶんの名前を選んでね</h2>
-      <div id="login-names"></div>
+      <h2>じぶんの名前を入れてね</h2>
+      <input class="field" id="login-name" placeholder="登録した名前" maxlength="20"
+        autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button class="btn" style="margin-top:12px" onclick="goToPin()">次へ</button>
+      <div class="pin-error" id="name-error"></div>
     </div>
-    <p class="sub" style="text-align:center">名前がないときは Yama に連絡してください</p>
+    <p class="sub" style="text-align:center">名前やPINがわからないときは、アプリに誘ってくれた人に聞いてください</p>
   </div>
   <div id="login-step-pin" class="hidden">
     <div class="card">
@@ -236,7 +239,7 @@ h2{font-size:1.05rem; margin:0 0 10px;}
       </div>
       <div class="pin-error" id="pin-error"></div>
       <div id="pin-pad"></div>
-      <button class="btn secondary" style="margin-top:16px" onclick="backToNames()">← 名前を選び直す</button>
+      <button class="btn secondary" style="margin-top:16px" onclick="backToNames()">← 名前を入れ直す</button>
     </div>
   </div>
 </div>
@@ -423,8 +426,7 @@ const state = {
   lastSeen: {},             // followee_id -> seen_at
   tab: 'cal',
   lastStroke: null,         // 直前になぞった範囲 {genre, dates[]}
-  loginMember: null,        // ログイン画面で選択中
-  loginList: [],            // ログイン画面の名前リスト
+  loginMember: null,        // ログイン画面で入力中 {name}
   pinDigits: '',
 };
 
@@ -502,23 +504,21 @@ async function showLogin(){
   $('login-screen').classList.remove('hidden');
   $('login-step-name').classList.remove('hidden');
   $('login-step-pin').classList.add('hidden');
-  const { data, error } = await sb.rpc('list_members_for_login');
-  const box = $('login-names');
-  if (error || !data || data.length === 0) {
-    box.innerHTML = '<p class="sub">名前を読み込めませんでした。開き直してみてください。</p>';
-    return;
-  }
-  state.loginList = data;
-  box.innerHTML = data.map(m =>
-    `<button class="name-item" onclick="pickName('${m.id}')">
-       <span class="avatar" style="background:${memberColor(m.id)}; width:34px; height:34px; font-size:.9rem">${esc(m.name[0])}</span>
-       ${esc(m.name)} <span class="arrow">›</span>
-     </button>`).join('');
+  $('name-error').textContent = '';
+  // 名前の一覧は出さない(誰が登録しているか分からないように)。
+  // この端末で前回ログインした名前だけ、入力欄に入れておく
+  let last = '';
+  try { last = localStorage.getItem('surf-iko:last-name') || ''; } catch (e) {}
+  $('login-name').value = last;
+  $('login-name').onkeydown = (e) => { if (e.key === 'Enter') goToPin(); };
 }
 
-function pickName(id){
-  const name = (state.loginList.find(m => m.id === id) || {}).name || '';
-  state.loginMember = { id, name };
+function goToPin(){
+  const name = $('login-name').value.trim();
+  if (!name) { $('name-error').textContent = '名前を入れてください'; return; }
+  $('name-error').textContent = '';
+  $('login-name').blur();
+  state.loginMember = { name };
   state.pinDigits = '';
   $('pin-title').textContent = `${name} さんのPINを入れてね`;
   $('pin-error').textContent = '';
@@ -560,17 +560,18 @@ async function submitPin(){
   renderPinBoxes();
   if (error) { $('pin-error').textContent = '通信エラーです。もう一度お試しください'; return; }
   if (!data.ok) {
+    // 名前が存在するかどうかは教えない(名前違いもPIN違いも同じ表示)
     const msgs = {
-      wrong_pin: `PINが違います(あと${data.remaining}回間違えるとロックされます)`,
       locked: `間違いが続いたためロック中です。あと${data.minutes}分ほど待ってください`,
-      not_found: 'メンバーが見つかりません',
-      no_pin: 'PINが未設定です。Yamaに連絡してください',
+      no_pin: 'PINが未設定です。管理者に連絡してください',
       no_auth: '接続エラーです。開き直してください',
     };
-    $('pin-error').textContent = msgs[data.error] || 'ログインできませんでした';
+    $('pin-error').textContent = msgs[data.error]
+      || '名前かPINが違います(5回続けて間違えると15分ロックされます)';
     return;
   }
   const m = data.member;
+  try { localStorage.setItem('surf-iko:last-name', m.name); } catch (e) {}
   await enterApp({ id: m.id, name: m.name, is_admin: m.is_admin });
   if (!m.pin_change_prompted) offerFirstPinChange();
 }
@@ -1248,7 +1249,7 @@ async function renderNakama(){
   spin(false);
   const others = state.members.filter(m => m.id !== state.me.id);
   if (others.length === 0) {
-    $('nakama-list').innerHTML = '<p class="sub">まだ仲間がいません。Yamaが「じぶん」タブから追加できます。</p>';
+    $('nakama-list').innerHTML = '<p class="sub">まだ仲間がいません。管理者が「じぶん」タブから追加できます。</p>';
     updateNakamaBadge();
     return;
   }
