@@ -44,7 +44,7 @@
 
 1. 左メニュー **SQL Editor** → 「+」→「Create a new snippet」
 2. `supabase/schema.sql` の中身を**全部**貼り付けて **「Run」**
-3. 結果に **`Yama`** が1行出れば成功(最初の管理者 Yama / PIN 0000 ができます)
+3. 結果に **`Yama`** が1行出れば成功(最初の管理者 Yama / PIN 0000 ができます。ログイン時は 0000 のあと「決定」を押し、6桁のPINに変更します)
 
 ※ 何度実行しても壊れません。「destructive operation」の確認が出たら「Run this query」でOK。
 
@@ -57,6 +57,7 @@
 | 1 | `supabase/002_trips.sql` | トリップ調整帳 | `trip_availability / trip_members / trips` の3行 |
 | 2 | `supabase/003_login_by_name.sql` | ログインを名前入力方式に | `OK` の1行 |
 | 3 | `supabase/004_shares.sql` | 見せる相手を自分で選ぶ | `OK` の1行 |
+| 4 | `supabase/005_pin6.sql` | PINを6桁に | `OK` の1行 |
 
 ### ステップ3 URLと鍵を index.html に貼る ✅済
 
@@ -86,6 +87,7 @@ surf-iko/
 ├── supabase/002_trips.sql           ← トリップ調整帳(2番目に実行)
 ├── supabase/003_login_by_name.sql   ← 名前入力ログイン(3番目に実行)
 ├── supabase/004_shares.sql          ← 見せる相手を選ぶ(4番目に実行)
+├── supabase/005_pin6.sql            ← PINを6桁に(5番目に実行)
 ├── .github/workflows/keepalive.yml  ← 自動ping
 └── README.md                        ← この文書
 ```
@@ -122,9 +124,9 @@ Supabase無料プランは、しばらく使わないと一時停止します。
 
 ### ステップ8 初回ログインと仲間の登録
 
-1. アプリを開く → 名前に **Yama** と入力 → PIN **0000**
-2. 「PINを変えますか?」が出るので **すぐ変更**(じぶんタブからでも変えられます)
-3. **じぶん**タブ → 管理者メニュー → 仲間の**名前**と**初期PIN(4桁)** を登録
+1. アプリを開く → 名前に **Yama** と入力 → PIN **0000** を入れて **「決定」**
+2. 「PINを6桁に変えてください」が出るので、**6桁の新しいPINを決める**
+3. **じぶん**タブ → 管理者メニュー → 仲間の**名前**と**初期PIN(6桁)** を登録
 4. 仲間にURLと初期PINを伝える(下のテンプレをどうぞ)
 
 ---
@@ -155,5 +157,5 @@ Supabase無料プランは、しばらく使わないと一時停止します。
 
 - 画面: GitHub Pages(`index.html` 1枚。フレームワークなし)
 - データ: Supabase(無料枠)。RLSで「自分の予定しか書けない」よう保護
-- ログイン: 匿名サインイン+4桁PIN(メール登録なし)。PINはbcryptで暗号化保存
+- ログイン: 匿名サインイン+6桁PIN(メール登録なし)。PINはbcryptで暗号化保存
 - 停止対策: GitHub Actionsが3日ごとにSupabaseへ自動アクセス

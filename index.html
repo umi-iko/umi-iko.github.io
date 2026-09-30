@@ -82,14 +82,15 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 .name-item:last-child{border-bottom:none;}
 .name-item:active{background:var(--accent-weak);}
 .name-item .arrow{margin-left:auto; color:var(--sub);}
-#pin-boxes{display:flex; gap:12px; justify-content:center; margin:18px 0;}
-.pin-box{width:52px; height:60px; border:2px solid var(--line); border-radius:12px;
+#pin-boxes{display:flex; gap:8px; justify-content:center; margin:18px 0;}
+.pin-box{width:44px; height:56px; border:2px solid var(--line); border-radius:12px;
   display:flex; align-items:center; justify-content:center; font-size:1.7rem; font-weight:700; background:#fff;}
 .pin-box.filled{border-color:var(--accent);}
 #pin-pad{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:300px; margin:0 auto;}
 #pin-pad button{min-height:58px; background:#fff; border-radius:14px; font-size:1.4rem; font-weight:600;
   box-shadow:0 1px 2px rgba(30,60,80,.08);}
 #pin-pad button:active{background:var(--accent-weak);}
+#pin-pad button.pin-ok{font-size:1rem; color:var(--sub);}
 .pin-error{color:var(--danger); text-align:center; min-height:1.4em; margin:8px 0; font-size:.9rem;}
 
 /* ================= タブバー ================= */
@@ -236,8 +237,8 @@ h2{font-size:1.05rem; margin:0 0 10px;}
     <div class="card">
       <h2 id="pin-title">PINを入れてね</h2>
       <div id="pin-boxes">
-        <div class="pin-box"></div><div class="pin-box"></div>
-        <div class="pin-box"></div><div class="pin-box"></div>
+        <div class="pin-box"></div><div class="pin-box"></div><div class="pin-box"></div>
+        <div class="pin-box"></div><div class="pin-box"></div><div class="pin-box"></div>
       </div>
       <div class="pin-error" id="pin-error"></div>
       <div id="pin-pad"></div>
@@ -287,7 +288,7 @@ h2{font-size:1.05rem; margin:0 0 10px;}
     <div class="card">
       <div class="row"><h2 id="my-name" style="margin:0"></h2><div class="spacer"></div>
         <span class="sub" id="my-role"></span></div>
-      <button class="btn secondary" style="margin-top:14px" onclick="openPinChange(false)">PINを変える</button>
+      <button class="btn secondary" style="margin-top:14px" onclick="openPinChange('normal')">PINを変える</button>
       <button class="btn secondary" style="margin-top:10px" onclick="confirmLogout()">ログアウト</button>
     </div>
     <div class="card">
@@ -299,7 +300,7 @@ h2{font-size:1.05rem; margin:0 0 10px;}
       <div style="margin-bottom:14px">
         <div class="sub" style="margin-bottom:6px">仲間を追加(名前と最初のPIN)</div>
         <input class="field" id="add-name" placeholder="名前(例: タロウ)" maxlength="20">
-        <input class="field" id="add-pin" placeholder="初期PIN(4桁の数字)" inputmode="numeric" maxlength="4" style="margin-top:8px">
+        <input class="field" id="add-pin" placeholder="初期PIN(6桁の数字)" inputmode="numeric" maxlength="6" style="margin-top:8px">
         <button class="btn" style="margin-top:10px" onclick="adminAddMember()">追加する</button>
       </div>
       <div class="sub" style="margin-bottom:6px">メンバー管理</div>
@@ -334,6 +335,7 @@ h2{font-size:1.05rem; margin:0 0 10px;}
    設定・定数
 ===================================================================== */
 const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+const PIN_LEN = 6;   // PINの桁数
 
 /* ジャンルと「行き方」(絵の具)の定義。
    追加したいときはここに1行足すだけ(色は濃い順に)。
@@ -539,9 +541,10 @@ function backToNames(){
 }
 function renderPinPad(){
   const pad = $('pin-pad');
-  const keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
+  const keys = ['1','2','3','4','5','6','7','8','9','決定','0','⌫'];
   pad.innerHTML = keys.map(k =>
-    k === '' ? '<div></div>'
+    k === '決定'
+      ? `<button class="pin-ok" onclick="pinKey('決定')">決定</button>`
       : `<button onclick="pinKey('${k}')">${k}</button>`).join('');
 }
 function renderPinBoxes(){
@@ -552,12 +555,15 @@ function renderPinBoxes(){
 }
 async function pinKey(k){
   if (k === '⌫') { state.pinDigits = state.pinDigits.slice(0, -1); renderPinBoxes(); return; }
-  if (state.pinDigits.length >= 4) return;
+  // 「決定」: 6桁に変える前の、4桁のPINの人用
+  if (k === '決定') { if (state.pinDigits.length >= 4) await submitPin(); return; }
+  if (state.pinDigits.length >= PIN_LEN) return;
   state.pinDigits += k;
   renderPinBoxes();
-  if (state.pinDigits.length === 4) await submitPin();
+  if (state.pinDigits.length === PIN_LEN) await submitPin();
 }
 async function submitPin(){
+  const typed = state.pinDigits;
   spin(true);
   const { data, error } = await sb.rpc('verify_pin', {
     p_name: state.loginMember.name, p_pin: state.pinDigits });
@@ -579,7 +585,8 @@ async function submitPin(){
   const m = data.member;
   try { localStorage.setItem('surf-iko:last-name', m.name); } catch (e) {}
   await enterApp({ id: m.id, name: m.name, is_admin: m.is_admin });
-  if (!m.pin_change_prompted) offerFirstPinChange();
+  if (m.needs_upgrade) openPinChange('upgrade', typed);   // 4桁の人は6桁に変えるまで進めない
+  else if (!m.pin_change_prompted) offerFirstPinChange();
 }
 
 /* 初回だけ「PIN変える?」 */
@@ -587,7 +594,7 @@ function offerFirstPinChange(){
   openModal(`
     <h2>PINを変えますか?</h2>
     <p class="sub">最初のPINのままでも使えますが、じぶんだけのPINに変えておくと安心です。あとから「じぶん」タブでも変えられます。</p>
-    <button class="btn" onclick="closeModal(); openPinChange(true)">変える</button>
+    <button class="btn" onclick="closeModal(); openPinChange('first')">変える</button>
     <button class="btn secondary" onclick="skipPinPrompt()">今はこのまま</button>
   `);
 }
@@ -1465,24 +1472,30 @@ async function deleteMyDay(id){
 }
 
 /* ---------- PIN変更 ---------- */
-function openPinChange(isFirst){
+/* mode: 'normal' / 'first'(初回) / 'upgrade'(4桁→6桁。やめられない) */
+function openPinChange(mode, currentPin){
+  const upgrade = mode === 'upgrade';
   openModal(`
-    <h2>PINを変える</h2>
-    <label class="sub">今のPIN${isFirst ? '(最初に教えてもらった4桁)' : ''}</label>
-    <input class="field" id="pc-cur" inputmode="numeric" maxlength="4" placeholder="0000" style="margin:4px 0 12px">
-    <label class="sub">新しいPIN(4桁の数字)</label>
-    <input class="field" id="pc-new" inputmode="numeric" maxlength="4" style="margin:4px 0 12px">
+    <h2>${upgrade ? 'PINを6桁に変えてください' : 'PINを変える'}</h2>
+    ${upgrade ? '<p class="sub">安全のため、PINは6桁になりました。新しい6桁のPINを決めてください。</p>' : ''}
+    <div class="${upgrade ? 'hidden' : ''}">
+      <label class="sub">今のPIN${mode === 'first' ? '(最初に教えてもらったPIN)' : ''}</label>
+      <input class="field" id="pc-cur" type="password" inputmode="numeric" maxlength="6" style="margin:4px 0 12px">
+    </div>
+    <label class="sub">新しいPIN(6桁の数字)</label>
+    <input class="field" id="pc-new" type="password" inputmode="numeric" maxlength="6" style="margin:4px 0 12px">
     <label class="sub">新しいPIN(もう一度)</label>
-    <input class="field" id="pc-new2" inputmode="numeric" maxlength="4" style="margin:4px 0">
+    <input class="field" id="pc-new2" type="password" inputmode="numeric" maxlength="6" style="margin:4px 0">
     <p class="pin-error" id="pc-error"></p>
     <button class="btn" onclick="submitPinChange()">変更する</button>
-    <button class="btn secondary" onclick="closeModal()">やめる</button>
+    ${upgrade ? '' : '<button class="btn secondary" onclick="closeModal()">やめる</button>'}
   `);
+  if (currentPin) $('pc-cur').value = currentPin;
 }
 async function submitPinChange(){
   const cur = $('pc-cur').value, nw = $('pc-new').value, nw2 = $('pc-new2').value;
   const err = $('pc-error');
-  if (!/^[0-9]{4}$/.test(nw)) { err.textContent = '新しいPINは4桁の数字にしてください'; return; }
+  if (!/^[0-9]{6}$/.test(nw)) { err.textContent = '新しいPINは6桁の数字にしてください'; return; }
   if (nw !== nw2) { err.textContent = '新しいPINが2回とも同じか確認してください'; return; }
   spin(true);
   const { error } = await sb.rpc('change_pin', { p_current: cur, p_new: nw });
@@ -1500,7 +1513,7 @@ async function adminAddMember(){
   const name = $('add-name').value.trim();
   const pin = $('add-pin').value.trim();
   if (!name) { toast('名前を入れてください', true); return; }
-  if (!/^[0-9]{4}$/.test(pin)) { toast('初期PINは4桁の数字にしてください', true); return; }
+  if (!/^[0-9]{6}$/.test(pin)) { toast('初期PINは6桁の数字にしてください', true); return; }
   spin(true);
   const { error } = await sb.rpc('admin_add_member', { p_name: name, p_pin: pin });
   spin(false);
@@ -1517,8 +1530,8 @@ function adminResetPin(id){
   const name = memberName(id);
   openModal(`
     <h2>${esc(name)} さんのPINリセット</h2>
-    <label class="sub">新しいPIN(4桁の数字)</label>
-    <input class="field" id="rp-pin" inputmode="numeric" maxlength="4" style="margin:6px 0">
+    <label class="sub">新しいPIN(6桁の数字)</label>
+    <input class="field" id="rp-pin" inputmode="numeric" maxlength="6" style="margin:6px 0">
     <p class="pin-error" id="rp-error"></p>
     <button class="btn" onclick="submitResetPin('${id}')">リセットする</button>
     <button class="btn secondary" onclick="closeModal()">やめる</button>
@@ -1527,7 +1540,7 @@ function adminResetPin(id){
 async function submitResetPin(id){
   const name = memberName(id);
   const pin = $('rp-pin').value.trim();
-  if (!/^[0-9]{4}$/.test(pin)) { $('rp-error').textContent = '4桁の数字にしてください'; return; }
+  if (!/^[0-9]{6}$/.test(pin)) { $('rp-error').textContent = '6桁の数字にしてください'; return; }
   spin(true);
   const { error } = await sb.rpc('admin_set_pin', { p_member_id: id, p_new: pin });
   spin(false);
