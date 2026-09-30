@@ -28,13 +28,13 @@ window.VAPID_PUBLIC_KEY  = "BA9Xm1y7twV-ylxSr-6Ie0Cl3AMbKSUeK_ES5KWK8f6NQxncSMMB
 <style>
 /* ================= 基本 ================= */
 :root{
-  --accent:#0E5A8A; --accent-weak:#E3EEF5;
-  --bg:#F5F8FA; --card:#FFFFFF; --text:#22333B; --sub:#7A8B94;
-  --line:#E3E9ED; --danger:#D64545; --safe-bottom:env(safe-area-inset-bottom,0px);
+  --accent:#1F4E8C; --accent-weak:#E4ECF6;
+  --bg:#F6F0E4; --card:#FFFCF5; --cell:#F0E9D8; --text:#1E3550; --sub:#7A8794;
+  --line:#E4DCCB; --danger:#D64545; --safe-bottom:env(safe-area-inset-bottom,0px);
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0; padding:0; background:var(--bg); color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif;
   font-size:16px; overscroll-behavior-y:none;}
 body{padding-bottom:calc(64px + var(--safe-bottom));}
 button{font-family:inherit; font-size:1rem; border:none; cursor:pointer; background:none; color:inherit;}
@@ -43,10 +43,12 @@ input,select,textarea{font-family:inherit; font-size:1rem;}
 
 /* ================= 共通部品 ================= */
 .screen{max-width:520px; margin:0 auto; padding:12px 14px 24px;}
-.card{background:var(--card); border-radius:16px; padding:16px; margin-bottom:14px;
-  box-shadow:0 1px 3px rgba(30,60,80,.06);}
-h1{font-size:1.25rem; margin:10px 0 14px;}
-h2{font-size:1.05rem; margin:0 0 10px;}
+.card{background:var(--card); border-radius:18px; padding:16px; margin-bottom:14px;
+  box-shadow:0 1px 3px rgba(60,50,30,.08); border:1px solid rgba(31,78,140,.08);}
+h1{font-size:1.3rem; margin:10px 0 14px; letter-spacing:.02em;}
+h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
+/* 線画アイコン */
+.ic{width:1em; height:1em; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.15em;}
 .btn{display:block; width:100%; min-height:48px; border-radius:12px; font-weight:600;
   background:var(--accent); color:#fff; padding:12px;}
 .btn:active{opacity:.85;}
@@ -77,7 +79,7 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 /* ================= ログイン ================= */
 #login-screen{padding-top:36px;}
 .login-logo{text-align:center; margin-bottom:22px;}
-.login-logo img{width:84px; height:84px; border-radius:20px;}
+.login-logo img{width:96px; height:96px; border-radius:24px; box-shadow:0 2px 8px rgba(31,78,140,.15);}
 .login-logo div{font-size:1.35rem; font-weight:700; margin-top:10px;}
 .name-item{display:flex; align-items:center; width:100%; min-height:56px; padding:8px 14px;
   border-bottom:1px solid var(--line); font-size:1.05rem; text-align:left;}
@@ -89,35 +91,41 @@ h2{font-size:1.05rem; margin:0 0 10px;}
   display:flex; align-items:center; justify-content:center; font-size:1.7rem; font-weight:700; background:#fff;}
 .pin-box.filled{border-color:var(--accent);}
 #pin-pad{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:300px; margin:0 auto;}
-#pin-pad button{min-height:58px; background:#fff; border-radius:14px; font-size:1.4rem; font-weight:600;
+#pin-pad button{min-height:58px; background:var(--card); border-radius:14px; font-size:1.4rem; font-weight:600;
   box-shadow:0 1px 2px rgba(30,60,80,.08);}
 #pin-pad button:active{background:var(--accent-weak);}
 #pin-pad button.pin-ok{font-size:1rem; color:var(--sub);}
 .pin-error{color:var(--danger); text-align:center; min-height:1.4em; margin:8px 0; font-size:.9rem;}
 
 /* ================= タブバー ================= */
-#tabbar{position:fixed; bottom:0; left:0; right:0; display:flex; background:#fff;
+#tabbar{position:fixed; bottom:0; left:0; right:0; display:flex; background:var(--card);
   border-top:1px solid var(--line); padding-bottom:var(--safe-bottom); z-index:100;}
 #tabbar button{flex:1; padding:8px 0 6px; text-align:center; color:var(--sub); font-size:.72rem; position:relative;}
 #tabbar button.active{color:var(--accent); font-weight:700;}
-#tabbar .ticon{font-size:1.5rem; display:block; line-height:1.2;}
+#tabbar .ticon{display:block; width:26px; height:26px; margin:0 auto 2px; stroke-width:1.8;}
 .reddot{position:absolute; top:4px; left:calc(50% + 12px); width:10px; height:10px;
   background:var(--danger); border-radius:50%;}
 .reddot-inline{display:inline-block; width:9px; height:9px; background:var(--danger);
   border-radius:50%; margin-left:6px; vertical-align:middle;}
 
 /* ================= ジャンルタブ ================= */
-#genre-tabs{display:flex; gap:8px; margin-bottom:10px; overflow-x:auto; padding:2px 2px 6px;
-  -webkit-overflow-scrolling:touch;}
-#genre-tabs button{flex:0 0 auto; min-width:82px; min-height:44px; padding:0 14px; border-radius:12px;
-  background:#fff; font-weight:600; border:1.5px solid var(--line); color:var(--sub); white-space:nowrap;}
-#genre-tabs button.active{background:var(--accent); border-color:var(--accent); color:#fff;}
-#genre-tabs button.trip-tab{border-style:dashed; border-color:#B9A9E6; color:#6E4FBF;}
-#genre-tabs button.trip-tab.active{background:#6E4FBF; border-color:#6E4FBF; border-style:solid; color:#fff;}
-#genre-tabs button.trip-add{min-width:44px; padding:0; font-size:1.3rem; color:#6E4FBF; border-color:#B9A9E6;}
+/* ジャンル = 上に並ぶ「タブ」(アイコン+名前、下線で選択) */
+#genre-tabs{display:flex; gap:2px; margin:0 -14px 10px; overflow-x:auto; padding:0 12px;
+  border-bottom:2px solid var(--line); -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+#genre-tabs::-webkit-scrollbar{display:none;}
+#genre-tabs button{flex:0 0 auto; min-width:74px; min-height:58px; padding:6px 12px 8px; border:none; border-radius:12px 12px 0 0;
+  background:transparent; color:var(--sub); font-weight:700; font-size:.82rem; white-space:nowrap;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:3px; position:relative;}
+#genre-tabs button .gi{width:24px; height:24px; stroke-width:1.9;}
+#genre-tabs button.active{color:var(--accent); background:var(--card);}
+#genre-tabs button.active::after{content:''; position:absolute; left:12px; right:12px; bottom:-2px; height:3px; border-radius:2px; background:var(--accent);}
+#genre-tabs button.trip-tab{color:#7A6BB8;}
+#genre-tabs button.trip-tab.active{color:#5B4FA8;}
+#genre-tabs button.trip-add{min-width:48px; color:#7A6BB8;}
+#genre-tabs .gstate{position:absolute; top:4px; right:8px; font-size:.6rem; font-weight:800; color:#fff; background:#2E9E5B; border-radius:8px; padding:1px 5px;}
 
 /* トリップの要約カード */
-#trip-summary{background:#fff; border-radius:14px; padding:12px 14px; margin-bottom:10px;
+#trip-summary{background:var(--card); border-radius:14px; padding:12px 14px; margin-bottom:10px;
   box-shadow:0 1px 3px rgba(30,60,80,.06); border-left:4px solid #6E4FBF;}
 #trip-summary .t-line{margin-top:6px; font-size:.9rem; line-height:1.5;}
 #trip-summary .t-range{display:inline-block; background:#FFF4D6; border:1px solid #F2B01E; color:#7A5A00;
@@ -144,6 +152,11 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 .post .body{white-space:pre-wrap; word-break:break-word; margin-top:3px; line-height:1.5;}
 .post.mine .body{color:#3A2A6E;}
 #post-input{resize:vertical; min-height:70px;}
+/* プロフィール */
+.prof-row{display:flex; gap:8px; margin-top:8px; font-size:.92rem; line-height:1.5;}
+.prof-row .k{flex:0 0 76px; color:var(--sub); font-size:.8rem; padding-top:2px;}
+.prof-row .v{flex:1; white-space:pre-wrap; word-break:break-word;}
+.name-link{background:none; padding:0; font:inherit; font-weight:700; color:var(--text); text-decoration:underline dotted var(--sub); text-underline-offset:3px;}
 /* 通知設定 */
 .nrule{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);}
 .nrule:last-child{border-bottom:none;}
@@ -162,14 +175,17 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 .trip-member-row{display:flex; align-items:center; gap:10px; min-height:48px; border-bottom:1px solid var(--line);}
 .trip-member-row:last-child{border-bottom:none;}
 
-/* ================= 絵の具パレット ================= */
-#palette{display:flex; gap:8px; overflow-x:auto; padding:4px 2px 10px; -webkit-overflow-scrolling:touch;}
-.chip{flex-shrink:0; min-height:44px; border-radius:22px; padding:8px 14px; font-size:.88rem;
-  font-weight:600; color:#fff; opacity:.55; border:2.5px solid transparent; white-space:nowrap;}
+/* ================= 絵の具パレット = 点線の箱に入った丸い「チップ」 ================= */
+.palette-box{background:var(--card); border:1.5px dashed #BFB39A; border-radius:18px; padding:8px 10px 4px; margin-bottom:10px;}
+.palette-label{font-size:.72rem; color:var(--sub); font-weight:700; letter-spacing:.08em; margin:0 2px 4px; display:flex; align-items:center; gap:4px;}
+#palette{display:flex; gap:8px; overflow-x:auto; padding:4px 2px 8px; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+#palette::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0; min-height:44px; border-radius:22px; padding:8px 16px; font-size:.9rem;
+  font-weight:700; color:#fff; opacity:.55; border:2.5px solid transparent; white-space:nowrap; letter-spacing:.02em;}
 .chip.selected{opacity:1; border-color:#22333B; box-shadow:0 2px 6px rgba(0,0,0,.2);}
 .chip.eraser{background:#fff; color:var(--text); border:2.5px dashed var(--sub); opacity:1;}
 .chip.eraser.selected{border:2.5px solid var(--danger); color:var(--danger);}
-#paint-hint{font-size:.8rem; color:var(--sub); margin:0 2px 8px; min-height:1.2em;}
+#paint-hint{font-size:.78rem; color:var(--sub); margin:0 2px 6px; min-height:1.2em;}
 
 /* ================= カレンダー ================= */
 #cal-head{display:flex; align-items:center; margin-bottom:6px;}
@@ -177,12 +193,12 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 #cal-title{flex:1; text-align:center; font-weight:700; font-size:1.1rem;}
 #btn-today{font-size:.8rem; color:var(--accent); border:1px solid var(--accent);
   border-radius:14px; padding:5px 10px; margin-left:4px;}
-#cal-grid{touch-action:none; user-select:none; -webkit-user-select:none; background:#fff;
+#cal-grid{touch-action:none; user-select:none; -webkit-user-select:none; background:var(--card);
   border-radius:14px; padding:8px 6px 10px; box-shadow:0 1px 3px rgba(30,60,80,.06);}
 .cal-week{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:4px;}
 .dow{text-align:center; font-size:.72rem; color:var(--sub); padding:4px 0;}
 .dow.sun{color:#D06565;} .dow.sat{color:#5581C9;}
-.day{position:relative; aspect-ratio:1/1.15; border-radius:10px; background:var(--bg);
+.day{position:relative; aspect-ratio:1/1.15; border-radius:10px; background:var(--cell);
   display:flex; flex-direction:column; align-items:center; padding-top:5px;}
 .day .num{font-size:.9rem; font-weight:600; line-height:1.2; z-index:1;}
 .day.other-month{visibility:hidden;}
@@ -227,7 +243,7 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 
 /* ================= ボトムシート ================= */
 #sheet-back{position:fixed; inset:0; background:rgba(20,40,50,.4); z-index:130;}
-#sheet{position:fixed; left:0; right:0; bottom:0; background:#fff; border-radius:20px 20px 0 0;
+#sheet{position:fixed; left:0; right:0; bottom:0; background:var(--card); border-radius:20px 20px 0 0;
   padding:18px 18px calc(20px + var(--safe-bottom)); z-index:131; max-height:75vh; overflow-y:auto;
   max-width:560px; margin:0 auto;}
 #sheet .grip{width:44px; height:5px; background:var(--line); border-radius:3px; margin:0 auto 14px;}
@@ -251,7 +267,7 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 /* モーダル(確認・PIN変更) */
 #modal-back{position:fixed; inset:0; background:rgba(20,40,50,.45); z-index:140;
   display:flex; align-items:center; justify-content:center; padding:20px;}
-#modal{background:#fff; border-radius:18px; padding:20px; width:100%; max-width:380px;
+#modal{background:var(--card); border-radius:18px; padding:20px; width:100%; max-width:380px;
   max-height:80vh; overflow-y:auto;}
 #modal h2{margin-bottom:12px;}
 #modal .btn{margin-top:10px;}
@@ -259,6 +275,19 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 </head>
 <body>
 
+<!-- 線画アイコン(手描き風・青一色) -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-sea" viewBox="0 0 24 24"><path d="M2 17c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0 4-2 5 0"/><path d="M2 11.5c2.5-2.5 5-2.5 7.5 0s5 2.5 7.5 0"/><path d="M13 9.5c1.5-3 4-3.5 6-1.5 1 1 .5 2.5-1 2.5"/></symbol>
+  <symbol id="i-pool" viewBox="0 0 24 24"><path d="M4 7.5V19M8 7.5V19M4 7.5a2 2 0 014 0M4 11h4M4 14h4"/><path d="M11 18c2-2 4-2 6 0s4 2 5 0M11 14c2-2 4-2 6 0s4 2 5 0"/></symbol>
+  <symbol id="i-palm" viewBox="0 0 24 24"><path d="M12 21c0-5 1-9 3.5-12"/><path d="M15.5 9c-3-2.5-6-2-8 .5M15.5 9c3-2 6-1 7.5 1.5M15.5 9c-.5-3.5 1.5-5.5 4.5-6M15.5 9c.5-3 3.5-4 6-3"/><path d="M2 21c3-2 6-2 9 0"/></symbol>
+  <symbol id="i-plane" viewBox="0 0 24 24"><path d="M3 12.5l17.5-7.5-7 15-2.5-6z"/><path d="M11 14l9.5-9"/></symbol>
+  <symbol id="i-boat" viewBox="0 0 24 24"><path d="M3 16h18l-2.5 4h-13z"/><path d="M12 3v13M12 4l7 9h-7M12 7l-4 6h4"/></symbol>
+  <symbol id="i-mega" viewBox="0 0 24 24"><path d="M4 10v4h3.5l7.5 5V5L7.5 10z"/><path d="M18 9.5a4 4 0 010 5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M8 15h3"/></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.5"/><path d="M2.5 20c.5-4 3.5-6 6.5-6s6 2 6.5 6M15.5 20c.3-2.5 2-4 4.5-4 1 0 1.7.2 2 .4"/></symbol>
+  <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.5-4.5 4-7 7.5-7s7 2.5 7.5 7"/></symbol>
+</svg>
 <div id="spinner"><div class="spin"></div></div>
 <div id="toast"></div>
 
@@ -315,8 +344,11 @@ h2{font-size:1.05rem; margin:0 0 10px;}
   <!-- カレンダー -->
   <div id="view-cal" class="screen">
     <div id="genre-tabs"></div>
-    <div id="palette"></div>
-    <div id="paint-hint"></div>
+    <div class="palette-box">
+      <div class="palette-label">🎨 絵の具 ─ 選んでカレンダーをなぞる</div>
+      <div id="palette"></div>
+      <div id="paint-hint"></div>
+    </div>
     <div id="trip-summary" class="hidden"></div>
     <div id="cal-head">
       <button class="nav" id="btn-prev">‹</button>
@@ -377,6 +409,10 @@ h2{font-size:1.05rem; margin:0 0 10px;}
       <button class="btn secondary" style="margin-top:14px" onclick="openPinChange('normal')">PINを変える</button>
       <button class="btn secondary" style="margin-top:10px" onclick="confirmLogout()">ログアウト</button>
     </div>
+    <div class="card" id="profile-card">
+      <h2>🙋 プロフィール</h2>
+      <div id="profile-body"></div>
+    </div>
     <div class="card" id="notify-card">
       <h2>🔔 通知</h2>
       <div id="notify-body"><p class="sub">読み込み中…</p></div>
@@ -404,9 +440,9 @@ h2{font-size:1.05rem; margin:0 0 10px;}
 
   <!-- タブバー -->
   <div id="tabbar">
-    <button id="tab-cal" onclick="showTab('cal')"><span class="ticon">📅</span>カレンダー<span id="cal-dot" class="reddot hidden"></span></button>
-    <button id="tab-nakama" onclick="showTab('nakama')"><span class="ticon">🏄</span>仲間<span id="nakama-dot" class="reddot hidden"></span></button>
-    <button id="tab-jibun" onclick="showTab('jibun')"><span class="ticon">👤</span>自分</button>
+    <button id="tab-cal" onclick="showTab('cal')"><svg class="ic ticon"><use href="#i-cal"/></svg>カレンダー<span id="cal-dot" class="reddot hidden"></span></button>
+    <button id="tab-nakama" onclick="showTab('nakama')"><svg class="ic ticon"><use href="#i-people"/></svg>仲間<span id="nakama-dot" class="reddot hidden"></span></button>
+    <button id="tab-jibun" onclick="showTab('jibun')"><svg class="ic ticon"><use href="#i-person"/></svg>自分</button>
   </div>
 </div>
 
@@ -437,7 +473,7 @@ const PIN_LEN = 6;   // PINの桁数
 const GENRES = ['sea', 'pool', 'abroad'];
 const INTENTS = {
   sea: {
-    label: '海', accent: '#0E5A8A', accentWeak: '#E3EEF5',
+    label: '海', icon: 'i-sea', accent: '#1F4E8C', accentWeak: '#E4ECF6',
     intents: [
       { key: 'go',         label: '行く',       color: '#06306A' },
       { key: 'if_someone', label: '誰か行こう', color: '#7FB0DE', light: true },
@@ -445,7 +481,7 @@ const INTENTS = {
     ],
   },
   pool: {
-    label: 'プール', accent: '#0E8C74', accentWeak: '#E1F2EE',
+    label: 'プール', icon: 'i-pool', accent: '#0E7C6B', accentWeak: '#DFF0EC',
     intents: [
       { key: 'go',         label: '行く',       color: '#03594A' },
       { key: 'if_someone', label: '誰か行こう', color: '#6CC8B2', light: true },
@@ -453,7 +489,7 @@ const INTENTS = {
     ],
   },
   abroad: {
-    label: '海外', accent: '#D9701E', accentWeak: '#FBEEDF',
+    label: '海外', icon: 'i-palm', accent: '#C8742A', accentWeak: '#F8E9DA',
     intents: [
       { key: 'go',         label: '行く',       color: '#9A3F00' },
       { key: 'if_someone', label: '誰か行こう', color: '#F2A866', light: true },
@@ -466,7 +502,7 @@ const LEGACY_INTENTS = { pool_if_flat: 'maybe', range_ok: 'maybe', month_ok: 'ma
 const normIntent = (k) => LEGACY_INTENTS[k] || k;
 /* トリップ調整帳の絵の具(全トリップ共通)。ジャンル名は 'trip:<id>' で扱う */
 const TRIP_DEF = {
-  label: 'トリップ', accent: '#6E4FBF', accentWeak: '#EEE9F8',
+  label: 'トリップ', accent: '#5B4FA8', accentWeak: '#ECE8F7',
   intents: [
     { key: 'free',   label: '行ける',   color: '#2E9E5B' },
     { key: 'adjust', label: '要調整',   color: '#E0A62B' },
@@ -536,6 +572,7 @@ const state = {
   monthLog: [],             // 表示月の自分のサーフィン記録(行った/行かなかった)
   recruits: [],             // 自分が声をかけられている募集
   pushSub: null,            // この端末の通知登録(あれば)
+  aliases: {},              // 相手ID -> 自分だけのメモ名
   notifySettings: null, notifyRules: [], pushDevices: [],
   recruitPageId: null,
   tripPageId: null,         // 開いているトリップページ
@@ -836,7 +873,7 @@ async function doLogout(){
 async function refreshSocial(){
   const [{ data: members }, { data: follows }, { data: seen }, { data: trips }, { data: tms },
          { data: shares }, { data: acts }] = await Promise.all([
-    sb.from('members').select('id,name,is_admin').order('name'),
+    sb.from('members').select('id,name,is_admin,bio,spots,frequency').order('name'),
     sb.from('follows').select('followee_id'),
     sb.from('last_seen').select('followee_id,seen_at'),
     sb.from('trips').select('id,name,created_by,created_at,confirmed_start,confirmed_end,notes,notes_updated_at,notes_updated_by,kind,capacity,recruit_open,recruit_deadline,recruit_note').order('created_at'),
@@ -844,6 +881,9 @@ async function refreshSocial(){
     sb.from('shares').select('owner_id,viewer_id'),
     sb.rpc('visible_activity'),
   ]);
+  const { data: aliases } = await sb.from('member_aliases').select('target_id,alias');
+  state.aliases = {};
+  (aliases || []).forEach(a => { state.aliases[a.target_id] = a.alias; });
   // 最終更新日時は「見せてもらっている人」の分だけ返ってくる
   const actMap = {};
   (acts || []).forEach(a => { actMap[a.member_id] = a.last_activity_at; });
@@ -936,18 +976,20 @@ function dayMap(){
    カレンダー描画
 ===================================================================== */
 function renderGenreTabs(){
+  const ico = (id) => `<svg class="ic gi"><use href="#${id}"/></svg>`;
   const base = GENRES.map(g =>
-    `<button class="${g === state.genre ? 'active' : ''}" onclick="setGenre('${g}')">${INTENTS[g].label}</button>`);
+    `<button class="${g === state.genre ? 'active' : ''}" data-kind="${g}" onclick="setGenre('${g}')">${ico(INTENTS[g].icon)}${INTENTS[g].label}</button>`);
   const trips = state.trips.map(t =>
-    `<button class="trip-tab ${state.genre === 'trip:' + t.id ? 'active' : ''}"
-       onclick="setGenre('trip:${t.id}')">${t.confirmed_start ? '✅' : (t.kind === 'boat' ? '🚤' : '✈️')} ${esc(t.name)}${
+    `<button class="trip-tab ${state.genre === 'trip:' + t.id ? 'active' : ''}" data-kind="${t.kind === 'boat' ? 'boat' : 'trip'}"
+       data-state="${t.confirmed_start ? 'confirmed' : 'open'}" onclick="setGenre('trip:${t.id}')">
+       ${ico(t.kind === 'boat' ? 'i-boat' : 'i-plane')}${esc(t.name)}${t.confirmed_start ? '<span class="gstate">確定</span>' : ''}${
        state.tripUnread[t.id] ? '<span class="tab-dot"></span>' : ''}</button>`);
   // 声をかけられている募集(まだ参加者ではないもの)
   const recruits = state.recruits.filter(r => !r.joined).map(r =>
-    `<button class="trip-tab ${state.recruitPageId === r.trip_id ? 'active' : ''}"
-       onclick="openRecruitPage('${r.trip_id}')">📣 ${esc(r.name)}${
+    `<button class="trip-tab ${state.recruitPageId === r.trip_id ? 'active' : ''}" data-kind="recruit"
+       onclick="openRecruitPage('${r.trip_id}')">${ico('i-mega')}${esc(r.name)}${
        r.my_status === 'invited' && r.recruit_open ? '<span class="tab-dot"></span>' : ''}</button>`);
-  const add = `<button class="trip-add" title="トリップを作る" onclick="openTripCreate()">＋</button>`;
+  const add = `<button class="trip-add" title="トリップを作る" onclick="openTripCreate()">${ico('i-plus')}追加</button>`;
   $('genre-tabs').innerHTML = [...base, ...trips, ...recruits, add].join('');
   const act = $('genre-tabs').querySelector('.active');
   if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -1025,7 +1067,66 @@ function tripStats(trip){
   return { allFree: new Set(allFree), allOk: new Set(allOk),
            freeRanges: toRanges(allFree), okRanges: toRanges(allOk), unanswered };
 }
-function memberName(id){ return state.members.find(m => m.id === id)?.name || '?'; }
+/* 表示名: 自分だけのメモ名があれば「登録名(メモ名)」 */
+function rawName(id){ return state.members.find(m => m.id === id)?.name || '?'; }
+function memberName(id){ const n = rawName(id); const a = state.aliases[id]; return a ? `${n}(${a})` : n; }
+function nameLink(id){ return `<button class="name-link" onclick="openProfile('${id}')">${esc(memberName(id))}</button>`; }
+
+/* ---------- プロフィール ---------- */
+function openProfile(id){
+  const m = state.members.find(x => x.id === id); if (!m) return;
+  const me = id === state.me.id;
+  const alias = state.aliases[id] || '';
+  openSheet(`
+    <div class="row" style="gap:12px">
+      <span class="avatar" style="background:${memberColor(id)}; width:48px; height:48px; font-size:1.2rem">${esc(m.name[0])}</span>
+      <div><h2 style="margin:0">${esc(m.name)}</h2>${alias ? `<div class="sub">メモ名: ${esc(alias)}</div>` : ''}${m.is_admin ? '<div class="sub">管理者</div>' : ''}</div>
+    </div>
+    ${(m.bio || m.spots || m.frequency) ? `
+      ${m.bio ? `<div class="prof-row"><span class="k">自己紹介</span><span class="v">${esc(m.bio)}</span></div>` : ''}
+      ${m.spots ? `<div class="prof-row"><span class="k">よく行く</span><span class="v">${esc(m.spots)}</span></div>` : ''}
+      ${m.frequency ? `<div class="prof-row"><span class="k">頻度</span><span class="v">${esc(m.frequency)}</span></div>` : ''}`
+      : `<p class="sub" style="margin-top:12px">${me ? 'プロフィールはまだ書いていません。「自分」タブで書けます。' : 'プロフィールはまだありません'}</p>`}
+    ${me ? '' : `
+      <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--line)">
+        <label class="sub">自分だけのメモ名(あなたにだけ「${esc(m.name)}(メモ名)」と表示されます)</label>
+        <div class="row" style="margin-top:6px">
+          <input class="field" id="alias-input" maxlength="20" placeholder="例: 湘南の○○さん" value="${esc(alias)}">
+          <button class="btn secondary" style="width:auto; padding:0 14px" onclick="saveAlias('${id}')">保存</button>
+        </div>
+      </div>
+      <button class="btn secondary" style="margin-top:12px" onclick="closeSheet(); openMemberDetail('${id}')">📅 予定を見る</button>`}
+    <button class="btn secondary" style="margin-top:8px" onclick="closeSheet()">閉じる</button>
+  `);
+}
+async function saveAlias(id){
+  const alias = $('alias-input').value.trim();
+  const { error } = alias
+    ? await sb.from('member_aliases').upsert({ owner_id: state.me.id, target_id: id, alias, updated_at: new Date().toISOString() }, { onConflict: 'owner_id,target_id' })
+    : await sb.from('member_aliases').delete().eq('owner_id', state.me.id).eq('target_id', id);
+  if (error) { toast('保存に失敗しました', true); return; }
+  if (alias) state.aliases[id] = alias; else delete state.aliases[id];
+  toast(alias ? 'メモ名を保存しました' : 'メモ名を消しました');
+  closeSheet();
+  if (state.tab === 'nakama') await renderNakama(); else renderCalendar();
+}
+function renderMyProfile(){
+  const m = state.members.find(x => x.id === state.me.id) || {};
+  $('profile-body').innerHTML = `
+    <label class="sub">自己紹介(お互い知らない人もいるので、ひとこと)</label>
+    <textarea class="field" id="pf-bio" rows="3" maxlength="500" placeholder="例: 湘南メインで週末サーファー。ロング多め。">${esc(m.bio || '')}</textarea>
+    <label class="sub" style="display:block; margin-top:10px">よく行く場所</label>
+    <input class="field" id="pf-spots" maxlength="200" placeholder="例: 鵠沼・千葉北・静波" value="${esc(m.spots || '')}">
+    <label class="sub" style="display:block; margin-top:10px">行く頻度・定期的な予定</label>
+    <input class="field" id="pf-freq" maxlength="100" placeholder="例: 毎週土曜の朝、月1でプール" value="${esc(m.frequency || '')}">
+    <button class="btn" style="margin-top:12px" onclick="saveMyProfile()">プロフィールを保存</button>`;
+}
+async function saveMyProfile(){
+  const { error } = await sb.rpc('update_my_profile', { p_bio: $('pf-bio').value, p_spots: $('pf-spots').value, p_frequency: $('pf-freq').value });
+  if (error) { toast('保存に失敗しました', true); return; }
+  toast('プロフィールを保存しました');
+  await refreshSocial();
+}
 
 function renderTripSummary(trip, st){
   const box = $('trip-summary');
@@ -1360,7 +1461,7 @@ function openDaySheet(ds, genre){
       return `<div class="sheet-person">
         <div class="avatar" style="background:${memberColor(r.member_id)}">${esc((m?.name||'?')[0])}</div>
         <div style="flex:1">
-          <div><b>${esc(m?.name || '?')}</b>${isMe ? ' <span class="sub">(自分)</span>' : ''}</div>
+          <div>${nameLink(r.member_id)}${isMe ? ' <span class="sub">(自分)</span>' : ''}</div>
           <div style="margin-top:4px"><span class="intent-tag" style="background:${idef.color}; color:${textOn(idef)}">${idef.label}</span></div>
           ${r.note ? `<div class="sub" style="margin-top:6px">📝 ${esc(r.note)}</div>` : ''}
         </div>
@@ -1370,7 +1471,7 @@ function openDaySheet(ds, genre){
     }).join('');
     list += unanswered.map(id => `<div class="sheet-person" style="opacity:.6">
         <div class="avatar" style="background:${memberColor(id)}">${esc(memberName(id)[0])}</div>
-        <div style="flex:1"><div><b>${esc(memberName(id))}</b>${id === state.me.id ? ' <span class="sub">(自分)</span>' : ''}</div>
+        <div style="flex:1"><div>${nameLink(id)}${id === state.me.id ? ' <span class="sub">(自分)</span>' : ''}</div>
           <div class="sub" style="margin-top:4px">未回答</div></div>
       </div>`).join('');
   }
@@ -1663,8 +1764,8 @@ function renderTripPageHead(){
       ✅ ${rangeLabel([t.confirmed_start, t.confirmed_end])}</span></div>
     ${t.kind === 'boat' ? `<div class="sub" style="margin-top:6px">🚤 定員 ${t.capacity}人・行く ${t.going.length}人</div>` : ''}
     <div style="display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 14px">
-      ${(t.kind === 'boat' ? t.going : t.members).map(id => `<span class="row" style="gap:4px; background:#fff; border-radius:16px; padding:3px 10px 3px 3px; font-size:.85rem">
-        <span class="avatar" style="background:${memberColor(id)}; width:24px; height:24px; font-size:.7rem">${esc(memberName(id)[0])}</span>${esc(memberName(id))}</span>`).join('')}
+      ${(t.kind === 'boat' ? t.going : t.members).map(id => `<button class="row" style="gap:4px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:3px 10px 3px 3px; font-size:.85rem" onclick="openProfile('${id}')">
+        <span class="avatar" style="background:${memberColor(id)}; width:24px; height:24px; font-size:.7rem">${esc(rawName(id)[0])}</span>${esc(memberName(id))}</button>`).join('')}
     </div>`;
 }
 function renderTripNotes(){
@@ -1727,7 +1828,7 @@ function renderTripPosts(){
     return `<div class="post ${mine ? 'mine' : ''}">
       <span class="avatar" style="background:${memberColor(p.member_id)}; width:32px; height:32px; font-size:.85rem">${esc(memberName(p.member_id)[0])}</span>
       <div style="flex:1; min-width:0">
-        <div class="row" style="gap:6px"><b style="font-size:.9rem">${esc(memberName(p.member_id))}</b>
+        <div class="row" style="gap:6px"><span style="font-size:.9rem">${nameLink(p.member_id)}</span>
           <span class="sub" style="font-size:.75rem">${fmtDateTime(p.created_at)}</span>
           <div class="spacer"></div>
           ${mine || canModerate ? `<button class="sub" style="min-height:32px; min-width:32px" onclick="deletePost('${p.id}')">🗑</button>` : ''}</div>
@@ -2238,9 +2339,9 @@ async function renderNakama(){
         ? `最終更新 ${new Date(m.last_activity_at).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})}`
         : 'まだ予定なし';
     return `<div class="member-row">
-      <button class="member-name-btn" onclick="openMemberDetail('${m.id}')">
+      <button class="member-name-btn" onclick="openProfile('${m.id}')">
         <span class="avatar" style="background:${memberColor(m.id)}">${esc(m.name[0])}</span>
-        <span><b>${esc(m.name)}</b>${dot}<br><span class="sub">${last}</span></span>
+        <span><b>${esc(memberName(m.id))}</b>${dot}<br><span class="sub">${last}</span></span>
       </button>
       <label class="toggle-col">
         <input type="checkbox" class="check" ${state.sharesTo.has(m.id) ? 'checked' : ''}
@@ -2363,6 +2464,7 @@ async function openMemberDetail(id){
 async function renderJibun(){
   renderSurfStats();
   renderNotify();
+  renderMyProfile();
   $('my-name').textContent = state.me.name;
   $('my-role').textContent = state.me.is_admin ? '管理者' : '';
 
