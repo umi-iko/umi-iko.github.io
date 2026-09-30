@@ -291,6 +291,8 @@ end;
 $$;
 
 -- 声をかけられた人: 自分宛ての募集の一覧(コアメンバーや他の回答者は含めない)
+-- 009 で戻り値の列が増えるので、再実行時のために一度消してから作り直す
+drop function if exists public.my_recruits();
 create or replace function public.my_recruits()
 returns table (trip_id uuid, name text, confirmed_start date, confirmed_end date, capacity int, remaining int,
                recruit_open boolean, recruit_deadline date, my_status text, my_comment text,
