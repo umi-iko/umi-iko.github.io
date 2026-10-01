@@ -2970,7 +2970,8 @@ async function renderInvite(){
         <b style="font-size:1.15rem; letter-spacing:.05em">${esc(code)}</b>
         <span class="sub">(受付中)</span>
       </div>
-      <button class="btn" onclick="copyInvite()">招待メッセージをコピー</button>
+      <button class="btn" onclick="shareInvite()">招待を送る(LINE・メールなど)</button>
+      <button class="btn secondary" style="margin-top:8px" onclick="copyInvite()">招待メッセージをコピー</button>
       <div class="row" style="margin-top:8px; gap:8px">
         <button class="btn secondary" onclick="setInvite('random')">新しいコードに変える</button>
         <button class="btn danger-outline" onclick="setInvite(null)">受付を止める</button>
@@ -2996,6 +2997,16 @@ async function setInvite(mode){
   if (error) { toast('変更に失敗しました', true); return; }
   toast(code ? `招待コードを「${code}」にしました` : '受付を止めました');
   await renderInvite();
+}
+/* 端末の共有メニュー(LINE・メール・AirDrop など)で招待文を送る。使えない端末ではコピーに切り替え */
+async function shareInvite(){
+  if (!state.inviteCode) return;
+  const text = inviteText(state.inviteCode);
+  if (navigator.share) {
+    try { await navigator.share({ title: 'サーフィン行こ', text }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  await copyInvite();
 }
 async function copyInvite(){
   if (!state.inviteCode) return;
