@@ -27,6 +27,52 @@ export function toRanges(dates) {
   if (start !== null) out.push([start, prev]);
   return out;
 }
+/* 今日・明日・明後日は言葉で、それ以降は日付で */
+export function dayLabel(d, today) {
+  if (d === today) return '今日';
+  if (d === addDays(today, 1)) return '明日';
+  if (d === addDays(today, 2)) return '明後日';
+  return fmtDate(d);
+}
+export function datesLabel(dates, today) {
+  return toRanges(dates).map(([a, b]) => a === b ? dayLabel(a, today) : `${dayLabel(a, today)}〜${dayLabel(b, today)}`).join('・');
+}
+/* 1人分の予定(複数の日・ジャンル・強さ)を1つの言い回しにする
+   - ジャンルが1つ・強さも1つ: 行く→「海に行くよー / プール行くよー / 海外行くよー」、誰か行こう→「海 誰か行こう」、ワンチャン→「海 ワンチャン」
+   - ジャンルが1つ・強さが混在: 「海に行ったりするよ / プール行ったりするよ」
+   - ジャンルが混在: 「○○とか行こー」。○○は「誰か行こう」が入っているジャンル(複数なら早い日)、無ければ一番早い日のジャンル */
+export function intentPhrase(genre, intent) {
+  const g = GENRE_LABEL[genre] || genre;
+  if (intent === 'go') return genre === 'sea' ? '海に行くよー' : `${g}行くよー`;
+  return `${g} ${INTENT_LABEL[intent] || intent}`;
+}
+export function groupPhrase(items) {
+  const byDate = [...items].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  const genres = [...new Set(byDate.map((i) => i.genre))];
+  const intents = [...new Set(byDate.map((i) => i.intent))];
+  if (genres.length > 1) {
+    const pick = byDate.find((i) => i.intent === 'if_someone') || byDate[0];
+    return `${GENRE_LABEL[pick.genre] || pick.genre}とか行こー`;
+  }
+  const g = genres[0];
+  if (intents.length > 1) return g === 'sea' ? '海に行ったりするよ' : `${GENRE_LABEL[g] || g}行ったりするよ`;
+  return intentPhrase(g, intents[0]);
+}
+/* 予定の出来事のうち「まだ送っていない」「いまも予定が残っている」ものだけを残す。
+   current: いまの availability 行 / alreadySent: 送信済みキー(actor|genre|date|intent) */
+export const availKey = (e) => `${e.actor_id || e.member_id}|${e.genre}|${e.date}|${e.intent}`;
+export function liveAvailEvents(events, current, alreadySent) {
+  const live = new Set((current || []).map(availKey));
+  const sent = new Set(alreadySent || []);
+  const seen = new Set();
+  return events.filter((e) => {
+    if (e.kind !== 'avail') return false;
+    const k = availKey(e);
+    if (sent.has(k) || seen.has(k)) return false;
+    if (current && !live.has(k)) return false;   // もう消されている(誤タッチなど)
+    seen.add(k); return true;
+  });
+}
 export function rangeLabel([a, b]) {
   if (!a) return '';
   if (!b || a === b) return fmtDate(a);
@@ -41,7 +87,7 @@ export function rangeLabel([a, b]) {
  * @returns [{ sub, memberId, payload: { title, body, tag, url, quiet } }]
  */
 export function buildNotifications(ctx) {
-  const { events, subs, settings, rules, shares, members, tripMembers, trips, invites, today } = ctx;
+  const { events, subs, settings, rules, shares, members, tripMembers, trips, invites, today, current, alreadySent } = ctx;
   const name = (id) => (members.find((m) => m.id === id) || {}).name || '?';
   const setting = (id) => settings.find((s) => s.member_id === id) || { mode: 'quiet', trip_posts: true, trip_events: true };
   const trip = (id) => trips.find((t) => t.id === id);
@@ -53,32 +99,29 @@ export function buildNotifications(ctx) {
   const out = []; // { memberId, title, body, tag, url }
   const push = (memberId, n) => { if (recipients.includes(memberId)) out.push({ memberId, ...n }); };
 
-  /* ---- 予定: (誰が・ジャンル・強さ)ごとにまとめる ---- */
-  const availGroups = {};
-  for (const e of events.filter((e) => e.kind === 'avail')) {
-    const k = `${e.actor_id}|${e.genre}|${e.intent}`;
-    (availGroups[k] = availGroups[k] || { actor: e.actor_id, genre: e.genre, intent: e.intent, dates: [] }).dates.push(e.date);
-  }
+  /* ---- 予定: 人ごとに1行にまとめる(ジャンル・強さが混ざれば言い回しで吸収) ---- */
+  const availEvents = liveAvailEvents(events, current, alreadySent);
   for (const r of recipients) {
     for (const rule of rules.filter((x) => x.member_id === r && x.enabled)) {
       const lines = [];
       const limit = rule.days_ahead ? addDays(today, rule.days_ahead) : null;
-      for (const g of Object.values(availGroups)) {
-        if (g.actor === r) continue;
-        if (!shared(g.actor, r)) continue;                          // 見せてもらっている人だけ
-        if (!(rule.genres || []).includes(g.genre)) continue;
-        if (!(rule.intents || []).includes(g.intent)) continue;
-        if (rule.member_ids && !rule.member_ids.includes(g.actor)) continue;
-        const dates = g.dates.filter((d) => d >= today && (!limit || d <= limit));
-        if (!dates.length) continue;
-        lines.push(`${name(g.actor)}: ${GENRE_LABEL[g.genre] || g.genre}「${INTENT_LABEL[g.intent] || g.intent}」 ${toRanges(dates).map(rangeLabel).join('、')}`);
+      const perActor = {};
+      for (const e of availEvents) {
+        if (e.actor_id === r) continue;
+        if (!shared(e.actor_id, r)) continue;                        // 見せてもらっている人だけ
+        if (!(rule.genres || []).includes(e.genre)) continue;
+        if (!(rule.intents || []).includes(e.intent)) continue;
+        if (rule.member_ids && !rule.member_ids.includes(e.actor_id)) continue;
+        if (e.date < today || (limit && e.date > limit)) continue;
+        (perActor[e.actor_id] = perActor[e.actor_id] || []).push({ genre: e.genre, intent: e.intent, date: e.date });
       }
-      if (lines.length) {
-        push(r, {
-          title: `${COLOR_EMOJI[rule.color] || '🔵'} ${lines.length === 1 ? '予定の更新' : `予定の更新 ${lines.length}件`}`,
-          body: lines.join('\n'),
-          tag: `rule-${rule.id}`, url: './',
-        });
+      for (const [actor, items] of Object.entries(perActor)) {
+        lines.push(`${name(actor)} ${datesLabel(items.map((i) => i.date), today)} ${groupPhrase(items)}`);
+      }
+      if (lines.length === 1) {
+        push(r, { title: `${COLOR_EMOJI[rule.color] || '🔵'} ${lines[0]}`, body: '', tag: `rule-${rule.id}`, url: './' });
+      } else if (lines.length > 1) {
+        push(r, { title: `${COLOR_EMOJI[rule.color] || '🔵'} 予定の更新 ${lines.length}件`, body: lines.join('\n'), tag: `rule-${rule.id}`, url: './' });
       }
     }
   }

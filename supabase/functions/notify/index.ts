@@ -5,7 +5,7 @@
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY は Supabase が自動で用意する
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3";
-import { buildNotifications } from "./logic.js";
+import { buildNotifications, liveAvailEvents, availKey } from "./logic.js";
 
 const json = (obj: unknown, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json" } });
@@ -26,8 +26,10 @@ Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   // 1. 未処理の出来事を取り出し、先に「処理済み」にする(二重送信を防ぐ)
+  // 予定(avail)は塗ってから5分待つ(塗り足しをまとめる・誤タッチで消した分は送らない)。それ以外はすぐ
+  const graceIso = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   const { data: events, error: e1 } = await sb.from("notify_events")
-    .select("*").is("processed_at", null).order("id").limit(500);
+    .select("*").is("processed_at", null).or(`kind.neq.avail,created_at.lte.${graceIso}`).order("id").limit(500);
   if (e1) return json({ error: e1.message }, 500);
   if (!events || events.length === 0) {
     // ついでに古い出来事を掃除
@@ -48,15 +50,37 @@ Deno.serve(async (req) => {
     sb.from("trip_invites").select("trip_id,member_id,result"),
   ].map((p) => p.then((r) => r.data || [])));
 
+  // 2b. 予定の出来事: いまも残っているか・送信済みでないかを調べる
+  const availEvents = events.filter((e) => e.kind === "avail");
+  let current: any[] = [], alreadySent: string[] = [];
+  if (availEvents.length) {
+    const actors = [...new Set(availEvents.map((e) => e.actor_id))];
+    const dates = [...new Set(availEvents.map((e) => e.date))];
+    const [{ data: cur }, { data: sentRows }] = await Promise.all([
+      sb.from("availability").select("member_id,genre,date,intent").in("member_id", actors).in("date", dates),
+      sb.from("notify_sent").select("actor_id,genre,date,intent").in("actor_id", actors).in("date", dates),
+    ]);
+    current = cur || [];
+    alreadySent = (sentRows || []).map(availKey);
+  }
+
   // 3. 送る内容を組み立てる
   let plan: any[] = [];
   try {
     plan = buildNotifications({
-      events, subs, settings, rules, shares, members, tripMembers, trips, invites, today: jstToday(),
+      events, subs, settings, rules, shares, members, tripMembers, trips, invites, today: jstToday(), current, alreadySent,
     });
   } catch (err) {
     console.error("buildNotifications failed", err);
     return json({ error: String(err), events: events.length }, 500);
+  }
+
+  // 3b. 今回扱った予定は「送信済み」として記録(同じ人・ジャンル・日・強さは二度と送らない)
+  const liveNow = liveAvailEvents(events, current, alreadySent);
+  if (liveNow.length) {
+    await sb.from("notify_sent").upsert(
+      liveNow.map((e) => ({ actor_id: e.actor_id, genre: e.genre, date: e.date, intent: e.intent })),
+      { onConflict: "actor_id,genre,date,intent", ignoreDuplicates: true });
   }
 
   // 4. 端末ごとに送る(バッジは端末ごとに加算)

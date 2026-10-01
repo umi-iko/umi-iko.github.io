@@ -2,9 +2,9 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>サーフィン行こ</title>
-<meta name="theme-color" content="#0E5A8A">
+<meta name="theme-color" content="#F6F0E4">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -309,7 +309,7 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
   display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(31,78,140,.15); z-index:5;}
 #login-screen{position:relative;}
 #cal-help{position:static; width:36px; height:36px; margin:0 10px 10px 4px; flex:none; border-width:1.5px;}
-#help-screen{position:fixed; inset:0; background:var(--bg); z-index:60; overflow-y:auto; -webkit-overflow-scrolling:touch;
+#help-screen{position:fixed; inset:0; background:var(--bg); z-index:125; overflow-y:auto; -webkit-overflow-scrolling:touch;
   padding:0 14px calc(40px + var(--safe-bottom));}
 #help-screen .help-top{position:sticky; top:0; background:var(--bg); padding:calc(10px + env(safe-area-inset-top)) 0 8px;
   display:flex; align-items:center; gap:10px; z-index:1; border-bottom:1px dashed #D9CFB8; margin-bottom:12px;}
@@ -333,6 +333,12 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
 .help-fig{margin:6px 0 14px; display:flex; gap:10px; justify-content:center;}
 .help-fig img{max-width:100%; width:260px; border-radius:12px; border:1px solid #D9CFB8; box-shadow:0 2px 8px rgba(31,78,140,.12); display:block; height:auto;}
 .help-fig.two img{width:calc(50% - 5px);}
+.help-steps{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:6px 0 12px;}
+.help-steps figure{margin:0;}
+.help-steps img{width:100%; height:auto; border-radius:12px; display:block; border:1px solid #D9CFB8;}
+.help-steps figcaption{font-size:.82rem; line-height:1.5; margin-top:6px; color:var(--text);}
+.help-steps figcaption b:first-child{display:inline-block; width:20px; height:20px; border-radius:50%; background:#1F4E8C; color:#fff; font-size:.75rem; text-align:center; line-height:20px; margin-right:4px;}
+@media (max-width:420px){ .help-steps{grid-template-columns:repeat(3,1fr); gap:6px;} .help-steps figcaption{font-size:.74rem;} }
 .help-svg{width:100%; max-width:340px; height:auto; display:block;}
 .intro-list{margin:6px 0 14px; padding:0; list-style:none;}
 .intro-list li{display:flex; gap:12px; align-items:flex-start; background:var(--card); border-radius:14px; padding:12px 14px; margin-bottom:8px;
@@ -560,6 +566,7 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
         <div><b>仲間の動きを通知で知れる</b><span class="d">よく一緒に行く人が「海に行く」と登録したら、スマートフォンに通知が届きます。</span></div></li>
     </ul>
     <button class="btn" onclick="closeIntro()">はじめる</button>
+    <button class="btn secondary" style="margin-top:10px" onclick="closeIntro(); openHelp(2)">ホーム画面に追加する方法(画像つき)</button>
     <button class="btn secondary" style="margin-top:10px" onclick="closeIntro(); openHelp()">くわしい使い方を見る</button>
   </div>
 </div>
@@ -592,40 +599,19 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
     <details>
       <summary><span class="no">2</span>ホーム画面に追加する(初回のみ)</summary>
       <div class="hb">
-        <p>ブラウザのブックマークではなく、ホーム画面のアイコンから開く形にしてください。アプリとして動作し、通知も受け取れるようになります。<b>iPhoneでは、この手順を済ませないと通知が届きません。</b></p>
-        <div class="help-fig">
-          <svg viewBox="0 0 320 120" class="help-svg" aria-hidden="true">
-            <rect x="8" y="8" width="90" height="104" rx="10" fill="#FFFCF5" stroke="#1F4E8C" stroke-width="2"/>
-            <text x="53" y="50" text-anchor="middle" font-size="9" fill="#1F4E8C">Safari / Chrome</text>
-            <rect x="34" y="70" width="38" height="28" rx="6" fill="#E4ECF6" stroke="#1F4E8C" stroke-width="2"/>
-            <path d="M53 90 V76 M47 82 l6-6 6 6" fill="none" stroke="#1F4E8C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <text x="53" y="110" text-anchor="middle" font-size="9" fill="#1F4E8C">共有 / メニュー</text>
-            <path d="M104 60 h24" stroke="#1F4E8C" stroke-width="2.5" marker-end="url(#help-arrow)"/>
-            <rect x="134" y="8" width="90" height="104" rx="10" fill="#FFFCF5" stroke="#1F4E8C" stroke-width="2"/>
-            <rect x="142" y="52" width="74" height="22" rx="6" fill="#1F4E8C"/>
-            <text x="179" y="66" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">ホーム画面に追加</text>
-            <rect x="142" y="28" width="74" height="16" rx="4" fill="#F0E9D8"/><rect x="142" y="80" width="74" height="16" rx="4" fill="#F0E9D8"/>
-            <path d="M230 60 h24" stroke="#1F4E8C" stroke-width="2.5" marker-end="url(#help-arrow)"/>
-            <rect x="260" y="8" width="52" height="104" rx="10" fill="#FFFCF5" stroke="#1F4E8C" stroke-width="2"/>
-            <rect x="272" y="38" width="28" height="28" rx="7" fill="#1F4E8C"/>
-            <path d="M276 58 c4-6 8-6 12-2 s6 2 8-4" fill="none" stroke="#F5EEDF" stroke-width="2.5" stroke-linecap="round"/>
-            <text x="286" y="80" text-anchor="middle" font-size="6.5" fill="#1F4E8C">サーフィン行こ</text>
-            <defs><marker id="help-arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#1F4E8C"/></marker></defs>
-          </svg>
+        <p>ブックマークではなく、<b>ホーム画面のアイコンから開く形</b>にしてください。アプリとして全画面で動き、通知も受け取れます。<b>iPhoneでは、この手順を済ませないと通知が届きません。</b></p>
+        <p><b>iPhone(Safari)</b> … 必ず Safari で開いてください(LINE内のブラウザや Chrome では追加できません)</p>
+        <div class="help-steps">
+          <figure><img src="help/hs-ios-1.png" alt="Safariの共有ボタン" loading="lazy"><figcaption><b>1</b> Safariで <span class="kw">umi-iko.github.io</span> を開き、画面下の<b>共有ボタン</b>(四角から矢印が出たマーク)を押す</figcaption></figure>
+          <figure><img src="help/hs-ios-2.png" alt="ホーム画面に追加の項目" loading="lazy"><figcaption><b>2</b> メニューを下にスクロールして<b>「ホーム画面に追加」</b>を押す</figcaption></figure>
+          <figure><img src="help/hs-ios-3.png" alt="追加ボタン" loading="lazy"><figcaption><b>3</b> 右上の<b>「追加」</b>を押す。ホーム画面にアイコンが入ります</figcaption></figure>
         </div>
-        <p><b>iPhone(Safari)</b></p>
-        <ol>
-          <li>Safariで <span class="kw">umi-iko.github.io</span> を開く</li>
-          <li>画面下部(機種によっては上部)の<b>共有ボタン</b>(四角から矢印が上に出ているマーク)を押す</li>
-          <li>メニューを下にスクロールし、<b>「ホーム画面に追加」</b>を押す</li>
-          <li>右上の<b>「追加」</b>を押す</li>
-        </ol>
+        <p class="tip">LINEで届いたリンクを押すとLINE内のブラウザで開きます。その場合は右下の「…」や共有マークから<b>「Safariで開く」</b>を選んでから、上の手順に進んでください。</p>
         <p><b>Android(Chrome)</b></p>
-        <ol>
-          <li>Chromeで <span class="kw">umi-iko.github.io</span> を開く</li>
-          <li>右上の<b>「⋮」</b>を押す</li>
-          <li><b>「ホーム画面に追加」</b>(または「アプリをインストール」)を押す</li>
-        </ol>
+        <div class="help-steps">
+          <figure><img src="help/hs-android-1.png" alt="Chromeのメニューボタン" loading="lazy"><figcaption><b>1</b> Chromeで <span class="kw">umi-iko.github.io</span> を開き、右上の<b>「⋮」</b>を押す</figcaption></figure>
+          <figure><img src="help/hs-android-2.png" alt="ホーム画面に追加の項目" loading="lazy"><figcaption><b>2</b> <b>「ホーム画面に追加」</b>(または「アプリをインストール」)を押し、確認画面で「追加」</figcaption></figure>
+        </div>
         <p>以後は、ホーム画面に追加された青い切手のアイコンから起動してください。</p>
       </div>
     </details>
@@ -665,7 +651,7 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
           <li>カレンダーの日付を<b>指でなぞる</b>(1日だけなら押すだけ)。色が付けば登録完了です</li>
         </ol>
         <div class="help-fig"><img src="help/04-painted.png" alt="登録した後のカレンダー" loading="lazy"></div>
-        <p><b>取り消す</b> … 同じボタンを選んだまま、もう一度なぞると消えます。<b>「🧽 消しゴム」</b>を選んでなぞる方法でも構いません。</p>
+        <p><b>取り消す</b> … 同じボタンを選んだまま、もう一度なぞると消えます。<b>「消しゴム」</b>を選んでなぞる方法でも構いません。</p>
         <p><b>メモを付ける</b> … 色を付けた日を<b>長押し</b>(1秒程度)すると、「朝一のみ」「○○ポイント希望」などのメモを残せます。メモは日付を押したときに仲間にも表示されます。</p>
         <p class="tip">保存ボタンはありません。なぞった時点で保存されています。</p>
       </div>
@@ -680,7 +666,7 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
           <li>行き方のボタンを選んでいない状態で<b>日付を押す</b>と、誰がどの予定を入れているかが一覧で表示されます</li>
           <li>カレンダーを左右に<b>スワイプ</b>(指で横に払う)すると、「海 → プール → 海外」とタブが切り替わります</li>
           <li>画面下の<b>「仲間」</b>を押すと仲間の一覧が開きます。名前を押すと、その人の予定とプロフィールが見られます</li>
-          <li>名前に<b>赤い丸</b>が付いている人は、前回見たあとに新しく予定を入れています</li>
+          <li>「見たい」にしている人の名前に<b>赤い丸</b>が付いていたら、前回見たあとに新しく予定を入れています</li>
         </ul>
       </div>
     </details>
@@ -704,7 +690,7 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
         <div class="help-fig two"><img src="help/07-trip-create.png" alt="トリップを作る画面" loading="lazy"><img src="help/08-trip-cal.png" alt="トリップの調整カレンダー" loading="lazy"></div>
         <p><b>トリップを作る(発起人)</b></p>
         <ol>
-          <li>上部タブの右端<b>「＋追加」</b>を押す</li>
+          <li>上部タブの右端<b>「追加」</b>を押す</li>
           <li>名前(例: バリ 11月)を入力し、種類と参加者を選んで<b>「作る」</b></li>
         </ol>
         <p><b>日程を合わせる(参加者全員)</b></p>
@@ -720,7 +706,7 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
     <details>
       <summary><span class="no">8</span>ボートトリップの募集に回答する</summary>
       <div class="hb">
-        <p>定員のあるボートトリップで空きが出た場合、声をかけられた人の上部タブに<b>「📣 (トリップ名)」</b>が表示されます。</p>
+        <p>定員のあるボートトリップで空きが出た場合、声をかけられた人の上部タブに、メガホンの印が付いた<b>トリップ名のタブ</b>が表示されます。</p>
         <ol>
           <li>そのタブを押すと、日程・案内文(料金や集合場所など)が確認できます</li>
           <li><b>「行く」「前向きに検討」「様子見」「行けない」</b>のいずれかを押します。締切までは何度でも変更できます</li>
@@ -739,7 +725,7 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
         </ul>
         <div class="help-fig"><img src="help/11-ranking.png" alt="行った日数ランキング" loading="lazy"></div>
         <ul>
-          <li><b>実際には行かなかった日</b> … 「🧽 消しゴム」を選び、過去のその日をなぞると記録から外れます</li>
+          <li><b>実際には行かなかった日</b> … 「消しゴム」を選び、過去のその日をなぞると記録から外れます</li>
           <li><b>予定に入れていなかったが行った日</b> … <b>「✓ 行った」</b>を選び、過去のその日をなぞると記録に加わります</li>
         </ul>
       </div>
@@ -752,11 +738,12 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
         <p>仲間が予定を入れたときや、トリップの連絡があったときに、スマートフォンに通知が届き、アイコンに件数が表示されます。</p>
         <ol>
           <li><b>ホーム画面のアイコンから</b>アプリを開く(項目2を参照。iPhoneでは必須です)</li>
-          <li>画面下の<b>「自分」</b>→<b>「🔔 通知」</b>の<b>「この端末で通知をオンにする」</b>を押す</li>
+          <li>画面下の<b>「自分」</b>→<b>「通知」</b>の<b>「この端末で通知をオンにする」</b>を押す</li>
           <li>「通知を許可しますか」と表示されたら<b>「許可」</b>を選ぶ</li>
           <li><b>「テスト通知を送る」</b>を押し、1分以内に届くことを確認する</li>
         </ol>
-        <p><b>設定の調整</b> … 「控えめ」は音を鳴らさず通知を1件にまとめます。「しっかり」は毎回通知します。どの予定を通知するか(例: 海の「行く」だけ、特定の人だけ、何日先まで)は、同じ画面の「ルール」で細かく決められます。</p>
+        <p><b>どんな通知が届くか</b> … 「タロウ 明日 海に行くよー」「ジロウ 明日〜明後日 プールとか行こー」のように、誰が・いつ・どこへ行くかが1行で届きます。同じ人の同じ日の予定は一度しか通知されません。</p>
+        <p><b>設定の調整</b> … 最初は「おすすめ」(明後日までの「行く・誰か行こう」を全員分、控えめモード)になっています。「控えめ」は音を鳴らさず通知を1件にまとめ、「しっかり」は毎回通知します。何日先まで・どの強さ・誰の予定を通知するかは、同じ画面の「ルール」で変えられます。</p>
         <p class="tip">届かない場合は、スマートフォンの「設定」→「通知」で、このアプリの通知が許可されているか確認してください。</p>
       </div>
     </details>
@@ -795,6 +782,16 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
 /* =====================================================================
    設定・定数
 ===================================================================== */
+if (!window.supabase) {
+  // オフラインなどで supabase-js が読み込めなかったとき: 回り続けるスピナーの代わりに案内を出す
+  document.getElementById('spinner').style.display = 'none';
+  document.body.insertAdjacentHTML('beforeend',
+    '<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;background:#F6F0E4;z-index:200">' +
+    '<div><p style="font-weight:700;font-size:1.1rem;margin-bottom:8px">接続できません</p>' +
+    '<p style="color:#6B6B6B;font-size:.9rem;margin-bottom:16px">電波のある場所でもう一度開いてください。</p>' +
+    '<button onclick="location.reload()" style="min-height:44px;padding:0 20px;border-radius:12px;background:#1F4E8C;color:#fff;font-weight:700">再読み込み</button></div></div>');
+  throw new Error('supabase-js not loaded');
+}
 const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 const PIN_LEN = 6;   // PINの桁数
 
@@ -2556,6 +2553,9 @@ async function renderNotify(){
             <button class="t-btn" style="color:var(--accent)" onclick="openRuleEditor('${r.id}')">編集</button>
           </div>`).join('') : '<p class="sub">ルールがありません。追加すると予定の通知が届きます。</p>'}
         <button class="btn secondary" style="margin-top:8px" onclick="openRuleEditor(null)">＋ ルールを追加</button>
+        <button class="btn secondary" style="margin-top:8px" onclick="applyRecommendedNotify()">おすすめの設定にする</button>
+        <p class="sub" style="margin-top:6px; font-size:.78rem">おすすめ = 明後日までの「行く・誰か行こう」を、海・プール・海外すべて、見せてもらっている全員分、控えめモードで。<br>
+          同じ人の同じ日の予定は一度しか通知しません。塗ってから5分ほどで届きます。</p>
         <div class="sub" style="margin:14px 0 6px"><b>その他の通知</b></div>
         <label class="row" style="min-height:44px"><input type="checkbox" class="check" ${st.trip_posts ? 'checked' : ''} onchange="setNotifyFlag('trip_posts', this.checked)"> 掲示板の新しい書き込み</label>
         <label class="row" style="min-height:44px"><input type="checkbox" class="check" ${st.trip_events ? 'checked' : ''} onchange="setNotifyFlag('trip_events', this.checked)"> トリップの連絡(日程の確定・募集・しおりの更新)</label>
@@ -2563,10 +2563,22 @@ async function renderNotify(){
   }
   box.innerHTML = head + devList + settingsHtml;
 }
+/* おすすめ設定: ルールを1本(明後日まで・全ジャンル・行く+誰か行こう・全員)にして控えめモードに */
+async function applyRecommendedNotify(){
+  spin(true);
+  const row = { member_id: state.me.id, color: 'blue', genres: ['sea','pool','abroad'], intents: ['go','if_someone'], days_ahead: 2, member_ids: null, enabled: true };
+  let { error } = await sb.from('notify_rules').delete().eq('member_id', state.me.id);
+  if (!error) ({ error } = await sb.from('notify_rules').insert(row));
+  if (!error) ({ error } = await sb.from('notify_settings').upsert({ member_id: state.me.id, mode: 'quiet' }, { onConflict: 'member_id' }));
+  spin(false);
+  if (error) { toast('設定できませんでした', true); return; }
+  toast('おすすめの設定にしました');
+  await renderNotify();
+}
 function ruleSummary(r){
   const g = (r.genres || []).length === 3 ? '海・プール・海外' : (r.genres || []).map(x => INTENTS[x]?.label || x).join('・');
   const i = (r.intents || []).map(x => INTENT_NAMES[x] || x).join('・');
-  const d = r.days_ahead ? `${r.days_ahead}日先まで` : '期間の制限なし';
+  const d = r.days_ahead === 2 ? '明後日まで' : r.days_ahead ? `${r.days_ahead}日先まで` : '期間の制限なし';
   const w = r.member_ids ? `${r.member_ids.map(memberName).map(esc).join('・')}の` : '';
   return `${w}<b>${esc(g)}</b>の「${esc(i)}」・${d}${r.enabled ? '' : '(オフ)'}`;
 }
@@ -2629,7 +2641,7 @@ let ruleDraft = null;
 function openRuleEditor(id){
   const r = id ? state.notifyRules.find(x => x.id === id) : null;
   ruleDraft = r ? { ...r, genres: [...r.genres], intents: [...r.intents], member_ids: r.member_ids ? [...r.member_ids] : null }
-                : { id: null, color: 'blue', genres: ['sea','pool','abroad'], intents: ['go','if_someone'], days_ahead: 14, member_ids: null, enabled: true };
+                : { id: null, color: 'blue', genres: ['sea','pool','abroad'], intents: ['go','if_someone'], days_ahead: 2, member_ids: null, enabled: true };
   renderRuleEditor();
 }
 function renderRuleEditor(){
@@ -2646,7 +2658,7 @@ function renderRuleEditor(){
     <div class="sub" style="margin:14px 0 6px"><b>強さ</b>(どの合図を知らせるか)</div>
     <div class="seg">${Object.keys(INTENT_NAMES).map(k => segBtn(d.intents.includes(k), INTENT_NAMES[k], `ruleToggle('intents','${k}')`)).join('')}</div>
     <div class="sub" style="margin:14px 0 6px"><b>期間</b>(何日先までの予定を知らせるか)</div>
-    <div class="seg">${[[3,'3日先まで'],[7,'1週間'],[14,'2週間'],[30,'1か月'],[null,'制限なし']].map(([n,l]) => segBtn(d.days_ahead === n, l, `ruleSet('days_ahead',${n})`)).join('')}</div>
+    <div class="seg">${[[2,'明後日まで'],[7,'1週間'],[14,'2週間'],[30,'1か月'],[null,'制限なし']].map(([n,l]) => segBtn(d.days_ahead === n, l, `ruleSet('days_ahead',${n})`)).join('')}</div>
     <div class="sub" style="margin:14px 0 6px"><b>誰の予定</b></div>
     <div class="seg">${segBtn(d.member_ids === null, '見せてもらっている全員', `ruleSet('member_ids',null)`)}${segBtn(d.member_ids !== null, '選んだ人だけ', `ruleSet('member_ids',[])`)}</div>
     ${d.member_ids !== null ? `<div style="max-height:30vh; overflow-y:auto; margin-top:6px">${others.map(m => `
@@ -2712,7 +2724,7 @@ async function renderSurfStats(){
       行かなかった日はカレンダーで消しゴム、予定に入れていなかった日は「✓ 行った」を選んで過去の日をなぞると直せます。</div>`;
 }
 
-function toggleEl(id){ $(id).classList.toggle('hidden'); }
+function toggleEl(id){ const el = $(id); if (el) el.classList.toggle('hidden'); }
 
 /* ---------- 行った日数ランキング ---------- */
 let rankScope = 'year';
@@ -2776,7 +2788,7 @@ async function renderNakama(){
   $('nakama-list').innerHTML = `
     <div class="nk-head">
       <div class="nk-search"><svg class="ic" style="width:16px;height:16px;stroke-width:2.2"><use href="#i-search"/></svg>
-        <input id="nakama-search" type="search" placeholder="名前で検索" value="${esc(q)}" autocomplete="off" autocorrect="off" oninput="filterNakama(this.value)"></div>
+        <input id="nakama-search" type="search" placeholder="名前で検索" aria-label="名前で検索" value="${esc(q)}" autocomplete="off" autocorrect="off" oninput="filterNakama(this.value)"></div>
       <button class="nk-all" onclick="shareAll(${allShared ? 'false' : 'true'})">${allShared ? '全員に見せない' : '全員に見せる'}</button>
       <button class="mini-help" onclick="toggleEl('nk-note')" aria-label="説明">?</button>
     </div>
@@ -3137,10 +3149,18 @@ function maybeShowIntro(){
 }
 
 /* ---------- 使い方(ヘルプ) ---------- */
-function openHelp(){
+function openHelp(section){
   $('help-screen').classList.remove('hidden');
-  $('help-screen').scrollTop = 0;
   document.body.style.overflow = 'hidden';
+  const secs = document.querySelectorAll('#help-screen details');
+  if (section) {
+    secs.forEach((d, i) => { d.open = (i + 1 === section); });
+    const el = secs[section - 1];
+    $('help-screen').scrollTop = 0;
+    if (el) setTimeout(() => el.scrollIntoView({ block: 'start' }), 50);
+  } else {
+    $('help-screen').scrollTop = 0;
+  }
 }
 function closeHelp(){
   $('help-screen').classList.add('hidden');
