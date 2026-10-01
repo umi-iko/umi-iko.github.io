@@ -307,7 +307,8 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
 .help-btn{position:absolute; top:calc(10px + env(safe-area-inset-top)); right:12px; width:40px; height:40px; border-radius:50%;
   border:2px solid #1F4E8C; color:#1F4E8C; background:var(--card); font-weight:700; font-size:1.1rem;
   display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(31,78,140,.15); z-index:5;}
-#login-screen{position:relative;}
+#login-screen{position:relative; min-height:100vh;}
+#login-screen .ver{position:absolute; left:0; right:0; bottom:calc(14px + var(--safe-bottom)); text-align:center; font-size:.72rem; color:var(--sub); letter-spacing:.04em;}
 #cal-help{position:static; width:36px; height:36px; margin:0 10px 10px 4px; flex:none; border-width:1.5px;}
 #help-screen{position:fixed; inset:0; background:var(--bg); z-index:125; overflow-y:auto; -webkit-overflow-scrolling:touch;
   padding:0 14px calc(40px + var(--safe-bottom));}
@@ -418,6 +419,7 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
       <button class="btn secondary" style="margin-top:10px" onclick="showLogin()">← ログインに戻る</button>
     </div>
   </div>
+  <div class="ver">バージョン 1.0</div>
   <div id="login-step-pin" class="hidden">
     <div class="card">
       <h2 id="pin-title">PINを入力</h2>
@@ -600,13 +602,13 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
       <summary><span class="no">2</span>ホーム画面に追加する(初回のみ)</summary>
       <div class="hb">
         <p>ブックマークではなく、<b>ホーム画面のアイコンから開く形</b>にしてください。アプリとして全画面で動き、通知も受け取れます。<b>iPhoneでは、この手順を済ませないと通知が届きません。</b></p>
-        <p><b>iPhone(Safari)</b> … 必ず Safari で開いてください(LINE内のブラウザや Chrome では追加できません)</p>
+        <p><b>iPhone(Safari)</b> … Safari での手順です。iPhone の Chrome でも、画面下の共有ボタンから同じように追加できます(iOS 16.4 以降)。LINE の中で開いたページからは追加できません。</p>
         <div class="help-steps">
           <figure><img src="help/hs-ios-1.png" alt="Safariの共有ボタン" loading="lazy"><figcaption><b>1</b> Safariで <span class="kw">umi-iko.github.io</span> を開き、画面下の<b>共有ボタン</b>(四角から矢印が出たマーク)を押す</figcaption></figure>
           <figure><img src="help/hs-ios-2.png" alt="ホーム画面に追加の項目" loading="lazy"><figcaption><b>2</b> メニューを下にスクロールして<b>「ホーム画面に追加」</b>を押す</figcaption></figure>
           <figure><img src="help/hs-ios-3.png" alt="追加ボタン" loading="lazy"><figcaption><b>3</b> 右上の<b>「追加」</b>を押す。ホーム画面にアイコンが入ります</figcaption></figure>
         </div>
-        <p class="tip">LINEで届いたリンクを押すとLINE内のブラウザで開きます。その場合は右下の「…」や共有マークから<b>「Safariで開く」</b>を選んでから、上の手順に進んでください。</p>
+        <p class="tip">LINEで届いたリンクを押すとLINE内のブラウザで開きます。その場合は右下の「…」や共有マークから<b>「Safariで開く」</b>(または「ブラウザで開く」)を選んでから、上の手順に進んでください。</p>
         <p><b>Android(Chrome)</b></p>
         <div class="help-steps">
           <figure><img src="help/hs-android-1.png" alt="Chromeのメニューボタン" loading="lazy"><figcaption><b>1</b> Chromeで <span class="kw">umi-iko.github.io</span> を開き、右上の<b>「⋮」</b>を押す</figcaption></figure>
