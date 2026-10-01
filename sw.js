@@ -1,7 +1,7 @@
 /* サーフィン行こ Service Worker
    index.html は network-first(常に最新を取りに行き、オフライン時だけキャッシュ)。
    これでアプリ更新時に古い画面が残る問題を防ぎます。 */
-const CACHE = 'surf-iko-v4';
+const CACHE = 'surf-iko-v5';
 const ASSETS = ['./index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -18,6 +18,7 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   // Supabase等の外部アクセスはキャッシュしない
   if (url.origin !== location.origin) return;

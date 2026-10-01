@@ -20,6 +20,8 @@ window.SUPABASE_URL      = "https://fxdqfbryqzfuuhabkpto.supabase.co";
 window.SUPABASE_ANON_KEY = "sb_publishable_W1abE7HNjQaarTDyIOsXbQ_YNIPWrX7";
 // プッシュ通知用の公開鍵(公開してよい鍵。秘密鍵は GitHub Secrets → Supabase にだけ置く)
 window.VAPID_PUBLIC_KEY  = "BA9Xm1y7twV-ylxSr-6Ie0Cl3AMbKSUeK_ES5KWK8f6NQxncSMMBE_GVwQNMkT4seID6xvd0lyYyTy-rFxmblgc";
+// 更新の目印(配布のたびに変える。アプリを開き直さなくても新しい版に切り替わる)
+window.APP_BUILD = "2026-10-01.2";
 </script>
 <!-- ▲▲▲ ここまで ▲▲▲ -->
 
@@ -102,6 +104,7 @@ h2{font-size:1.05rem; margin:0 0 10px; letter-spacing:.02em;}
 /* ================= タブバー ================= */
 #tabbar{position:fixed; bottom:0; left:0; right:0; display:flex; background:var(--card);
   border-top:1px solid var(--line); padding-bottom:var(--safe-bottom); z-index:100;}
+body.kb-open #tabbar{display:none;}
 #tabbar button{flex:1; padding:8px 0 6px; text-align:center; color:var(--sub); font-size:.72rem; position:relative;}
 #tabbar button.active{color:var(--accent); font-weight:700;}
 #tabbar .ticon{display:block; width:26px; height:26px; margin:0 auto 2px; stroke-width:1.8;}
@@ -3175,6 +3178,55 @@ function closeHelp(){
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
+
+/* ---------- 新しい版への自動切り替え(開き直し不要) ----------
+   アプリに戻ってきたとき(5分以上あけて)と30分ごとに index.html を取りに行き、
+   目印(APP_BUILD)か ETag が変わっていたら、作業中でない瞬間に読み込み直す */
+const upd = { etag: null, lastCheck: 0, pending: false };
+function safeToReload(){
+  if (stroke.active) return false;
+  if (!$('sheet').classList.contains('hidden') || !$('modal-back').classList.contains('hidden')) return false;
+  if (!$('help-screen').classList.contains('hidden') || !$('intro-screen').classList.contains('hidden')) return false;
+  const ae = document.activeElement;
+  if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) return false;
+  if (!$('bulk-memo-bar').classList.contains('hidden')) return false;
+  return true;
+}
+function applyUpdate(){
+  if (!upd.pending) return;
+  if (safeToReload()) { location.reload(); return; }
+  setTimeout(applyUpdate, 20000);   // 作業中なら少し待ってもう一度
+}
+async function checkForUpdate(force){
+  if (location.protocol !== 'https:') return;
+  const now = Date.now();
+  if (!force && now - upd.lastCheck < 5 * 60 * 1000) return;
+  upd.lastCheck = now;
+  try {
+    const res = await fetch('index.html?u=' + now, { cache: 'no-store' });
+    if (!res.ok) return;
+    const etag = res.headers.get('etag');
+    const html = await res.text();
+    const m = html.match(/APP_BUILD = "([^"]+)"/);
+    const newer = (m && m[1] !== window.APP_BUILD) || (upd.etag && etag && etag !== upd.etag);
+    if (!upd.etag && etag) upd.etag = etag;
+    if (newer && !upd.pending) { upd.pending = true; applyUpdate(); }
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(false); });
+setInterval(() => checkForUpdate(false), 30 * 60 * 1000);
+setTimeout(() => checkForUpdate(true), 4000);
+
+/* ---------- キーボード表示中は下のタブバーを隠す ----------
+   iPhone はキーボードが出ると position:fixed の要素が画面の途中に浮いてしまうため。
+   見えている高さ(visualViewport)が大きく縮んだとき = キーボードが出ている、と判定 */
+if (window.visualViewport) {
+  const vv = window.visualViewport;
+  const syncKb = () => document.body.classList.toggle('kb-open', vv.height < window.innerHeight * 0.75);
+  vv.addEventListener('resize', syncKb);
+  syncKb();
+}
+
 boot();
 </script>
 </body>
