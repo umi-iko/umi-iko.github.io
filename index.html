@@ -3008,7 +3008,7 @@ async function setInvite(mode){
   spin(true);
   const { error } = await sb.rpc('admin_set_invite', { p_code: code });
   spin(false);
-  if (error) { toast('変更に失敗しました', true); return; }
+  if (error) { console.error(error); toast('変更に失敗しました: ' + (error.message || error.code || ''), true); return; }
   toast(code ? `招待コードを「${code}」にしました` : '受付を止めました');
   await renderInvite();
 }
