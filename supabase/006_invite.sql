@@ -61,7 +61,7 @@ begin
     raise exception '招待コードは英数字とハイフンだけにしてください';
   end if;
   update public.invite_settings set code = v, updated_at = now() where id = 1;
-  delete from public.invite_failures;   -- 受付停止も解除
+  delete from public.invite_failures where true;   -- 受付停止も解除(Supabase は WHERE なしの DELETE を禁止)
 end;
 $$;
 
