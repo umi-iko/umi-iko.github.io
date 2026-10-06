@@ -21,7 +21,7 @@ window.SUPABASE_ANON_KEY = "sb_publishable_W1abE7HNjQaarTDyIOsXbQ_YNIPWrX7";
 // プッシュ通知用の公開鍵(公開してよい鍵。秘密鍵は GitHub Secrets → Supabase にだけ置く)
 window.VAPID_PUBLIC_KEY  = "BA9Xm1y7twV-ylxSr-6Ie0Cl3AMbKSUeK_ES5KWK8f6NQxncSMMBE_GVwQNMkT4seID6xvd0lyYyTy-rFxmblgc";
 // 更新の目印(配布のたびに変える。アプリを開き直さなくても新しい版に切り替わる)
-window.APP_BUILD = "2026-10-01.2";
+window.APP_BUILD = "2026-10-06.1";
 </script>
 <!-- ▲▲▲ ここまで ▲▲▲ -->
 
@@ -225,6 +225,15 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
   width:24px; height:24px; display:flex; align-items:center; justify-content:center;}
 .day.painted .num{color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.25);}
 .day.painted-light .num{color:var(--text); text-shadow:none;}
+/* 自分の予定 = 上の帯と枠(--my)。中は白地のまま → 仲間の頭文字と色が重ならない */
+.day.mine{background:var(--card); border:1.5px solid var(--my); box-shadow:inset 0 5px 0 var(--my); padding-top:9px;}
+.day.mine.light{border-color:color-mix(in srgb, var(--my) 55%, var(--accent));}
+.day.mine .num{color:var(--text); text-shadow:none;}
+.day.mine.today .num{color:#fff;}
+.day.mine.all-free{box-shadow:inset 0 5px 0 var(--my), inset 0 0 0 2.5px #F2B01E;}
+.day.mine.all-ok{box-shadow:inset 0 5px 0 var(--my), inset 0 0 0 2px #C9B8F0;}
+.day.mine.trip-confirmed{box-shadow:inset 0 5px 0 var(--my), inset 0 0 0 3px #6E4FBF;}
+.day.mine .note-mark{top:7px;}
 /* 行った(過去の日) */
 .day.went{opacity:1 !important;}
 .day.went::before{content:'✓'; position:absolute; top:1px; right:4px; font-size:.7rem; color:#fff; font-weight:800; z-index:1;}
@@ -241,16 +250,18 @@ h2 .hi, h1 .hi{width:22px; height:22px; vertical-align:-5px;}
 .day.painted-light .dots .more{color:var(--text);}
 .chip.chip-go{font-weight:800;}
 .day .note-mark{position:absolute; top:3px; right:4px; font-size:.6rem; z-index:1;}
-/* 仲間の予定: 1人=1つの色点(最大10個、超えたら +n) */
-.day .dots{position:absolute; bottom:3px; left:3px; right:3px; display:flex; flex-wrap:wrap;
-  gap:2px; justify-content:center; align-content:flex-end; max-height:22px; overflow:hidden;}
-.day .dots .dot{width:6px; height:6px; border-radius:50%; flex-shrink:0;
-  box-shadow:0 0 0 1px rgba(255,255,255,.8);}
-.day .dots .more{font-size:.5rem; font-weight:700; color:var(--text); line-height:6px; height:6px;}
+/* 仲間の予定: 頭文字の丸(最大3人、超えたら +n)。トリップでは回答の色 */
+.day .dots{position:absolute; bottom:3px; left:1px; right:1px; display:flex; justify-content:center; align-items:center; gap:1px;}
+.day .dots .dot{width:15px; height:15px; border-radius:50%; flex-shrink:0; color:#fff; font-size:.6rem; font-weight:700;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 1.5px #fff; line-height:1;}
+.day .dots .dot.light{color:var(--text);}
+.day .dots .more{font-size:.58rem; font-weight:800; color:var(--sub); margin-left:1px;}
 .day.painted .dots .more{color:#fff;}
 #legend{margin-top:10px; display:flex; flex-wrap:wrap; gap:8px 14px; font-size:.75rem; color:var(--sub);}
 #legend .lg{display:flex; align-items:center; gap:4px;}
 #legend .sw{width:14px; height:14px; border-radius:4px;}
+#legend .sw.band{background:var(--card); border:1.5px solid var(--my); box-shadow:inset 0 4px 0 var(--my); box-sizing:border-box;}
+#legend .sw.ini{border-radius:50%; color:#fff; font-size:.6rem; font-weight:700; display:inline-flex; align-items:center; justify-content:center;}
 
 /* まとめてメモのバー */
 #bulk-memo-bar{position:fixed; bottom:calc(72px + var(--safe-bottom)); left:50%;
@@ -1559,23 +1570,25 @@ function renderCalendar(){
       style = `background:${intentDef(state.genre, 'went').color}`;
     } else if (my && !(isPast && went === false && normIntent(my.intent) === 'go')) {
       const idef = intentDef(state.genre, my.intent);
-      cls.push('painted'); if (idef.light) cls.push('painted-light');
-      style = `background:${idef.color}`;
+      cls.push('mine'); if (idef.light) cls.push('light');
+      style = `--my:${idef.color}`;
     }
     if (st) {
       if (trip.confirmed_start && ds >= trip.confirmed_start && ds <= trip.confirmed_end) cls.push('trip-confirmed');
       else if (st.allFree.has(ds)) cls.push('all-free');
       else if (st.allOk.has(ds)) cls.push('all-ok');
     }
-    // 仲間の予定は人数分の色点で表示(10人まで。超えたら +n)
+    // 仲間の予定は頭文字の丸(3人まで。超えたら +n)
     // 通常ジャンル: 人ごとの色 / トリップ: 回答(行ける・要調整・行けない)の色
     let dots = '';
     if (oth.length) {
-      const MAX_DOTS = 10;
+      const MAX_DOTS = oth.length > 3 ? 2 : 3;   // 4人以上は 2人 + 「+n」(幅に収める)
       const show = oth.slice(0, MAX_DOTS);
-      dots = `<div class="dots">${show.map(r =>
-        `<span class="dot" style="background:${trip ? intentDef(state.genre, r.intent).color : memberColor(r.member_id)}"></span>`).join('')}${
-        oth.length > MAX_DOTS ? `<span class="more">+${oth.length - MAX_DOTS}</span>` : ''}</div>`;
+      dots = `<div class="dots">${show.map(r => {
+        const idef = trip ? intentDef(state.genre, r.intent) : null;
+        const color = idef ? idef.color : memberColor(r.member_id);
+        return `<span class="dot ${idef && idef.light ? 'light' : ''}" style="background:${color}">${esc((memberName(r.member_id) || '?')[0])}</span>`;
+      }).join('')}${oth.length > MAX_DOTS ? `<span class="more">+${oth.length - MAX_DOTS}</span>` : ''}</div>`;
     }
     const noteMark = my && my.note ? '<span class="note-mark"><svg class="ic" style="width:10px;height:10px;stroke-width:2.5"><use href="#i-memo"/></svg></span>' : '';
     cells.push(`<div class="${cls.join(' ')}" data-date="${ds}" ${style ? `style="${style}"` : ''}>
@@ -1589,13 +1602,13 @@ function renderCalendar(){
 
   // 凡例
   const g = genreDef(state.genre);
-  $('legend').innerHTML = g.intents.map(i =>
-    `<span class="lg"><span class="sw" style="background:${i.color}"></span>${i.label}</span>`).join('')
+  $('legend').innerHTML = `<span class="lg"><b>自分</b>=上の帯と枠:</span>` + g.intents.map(i =>
+    `<span class="lg"><span class="sw band" style="--my:${i.color}"></span>${i.label}</span>`).join('')
     + (trip
       ? `<span class="lg"><span style="color:#F2B01E">★</span>全員行ける</span>
          <span class="lg"><span style="color:#8E74D6">☆</span>要調整なら全員OK</span>
-         <span class="lg"><span class="sw" style="background:#2E9E5B; border-radius:50%; width:8px; height:8px"></span>点=仲間の回答(タップで名前)</span>`
-      : `<span class="lg"><span class="sw" style="background:#5581C9; border-radius:50%; width:8px; height:8px"></span>仲間の予定(1人=1つ・タップで名前)</span>`)
+         <span class="lg"><span class="sw ini" style="background:#2E9E5B">タ</span>仲間の回答(頭文字・色=回答。タップで一覧)</span>`
+      : `<span class="lg"><span class="sw ini" style="background:#7A52C7">タ</span>仲間の予定(頭文字。タップで一覧)</span>`)
     + `<span class="lg"><span class="sw" style="background:${intentDef(state.genre,'went').color}; color:#fff; font-size:.6rem; text-align:center; line-height:14px">✓</span>行った(過去の日・記録に入る)</span>`;
 }
 
@@ -1738,13 +1751,17 @@ function applyStrokeToCell(cell, ds){
   // 見た目を即時反映
   if (stroke.mode === 'paint') {
     const idef = intentDef(state.genre, state.paint);
-    cell.classList.add('painted');
-    cell.classList.toggle('painted-light', !!idef.light);
-    cell.classList.toggle('went', state.paint === 'went');
-    cell.style.background = idef.color;
+    if (state.paint === 'went') {
+      cell.classList.remove('mine', 'light'); cell.style.removeProperty('--my');
+      cell.classList.add('painted', 'went'); cell.style.background = idef.color;
+    } else {
+      cell.classList.remove('painted', 'painted-light', 'went'); cell.style.background = '';
+      cell.classList.add('mine'); cell.classList.toggle('light', !!idef.light);
+      cell.style.setProperty('--my', idef.color);
+    }
   } else {
-    cell.classList.remove('painted', 'painted-light', 'went');
-    cell.style.background = '';
+    cell.classList.remove('painted', 'painted-light', 'went', 'mine', 'light');
+    cell.style.background = ''; cell.style.removeProperty('--my');
   }
 }
 
